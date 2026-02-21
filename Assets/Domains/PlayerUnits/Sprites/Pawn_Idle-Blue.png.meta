@@ -1,31 +1,31 @@
 fileFormatVersion: 2
-guid: 7960340dbd04446e2a7b4832c63638f1
+guid: 3e8759b4126804c839fc296588685cbb
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -5948806968594788206
-    second: Pawn_Idle_0
+      213: -4274121677905948360
+    second: Pawn_Idle 1_0
   - first:
-      213: -3890830800090718979
-    second: Pawn_Idle_1
+      213: 2396478919623283463
+    second: Pawn_Idle 1_1
   - first:
-      213: 5745166470278179504
-    second: Pawn_Idle_2
+      213: -4876485402569306003
+    second: Pawn_Idle 1_2
   - first:
-      213: -6422090140873712968
-    second: Pawn_Idle_3
+      213: 4780564081192353585
+    second: Pawn_Idle 1_3
   - first:
-      213: 7767364186329714561
-    second: Pawn_Idle_4
+      213: -4531623586959649393
+    second: Pawn_Idle 1_4
   - first:
-      213: -5623599378145798578
-    second: Pawn_Idle_5
+      213: 3883246940479823346
+    second: Pawn_Idle 1_5
   - first:
-      213: -5368615170522500559
-    second: Pawn_Idle_6
+      213: -5913338590363867329
+    second: Pawn_Idle 1_6
   - first:
-      213: 5475363174786605065
-    second: Pawn_Idle_7
+      213: -7138948900620903773
+    second: Pawn_Idle 1_7
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -121,7 +121,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Pawn_Idle_0
+      name: Pawn_Idle-Blue_0
       rect:
         serializedVersion: 2
         x: 0
@@ -134,16 +134,16 @@ TextureImporter:
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 2901a878497917da0800000000000000
-      internalID: -5948806968594788206
+      spriteID: b970b579a0bc444c79634e09f40905f7
+      internalID: -1598845503
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Pawn_Idle_1
+      name: Pawn_Idle-Blue_1
       rect:
         serializedVersion: 2
         x: 192
@@ -156,16 +156,16 @@ TextureImporter:
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: dfc9177700ef00ac0800000000000000
-      internalID: -3890830800090718979
+      spriteID: 6c374f03b20bd4d9185a27f578c09756
+      internalID: -1231381017
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Pawn_Idle_2
+      name: Pawn_Idle-Blue_2
       rect:
         serializedVersion: 2
         x: 384
@@ -178,16 +178,16 @@ TextureImporter:
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 0ba6a6c277eeabf40800000000000000
-      internalID: 5745166470278179504
+      spriteID: 9a9188cfa81b448e481809ca1373936e
+      internalID: 1447432090
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Pawn_Idle_3
+      name: Pawn_Idle-Blue_3
       rect:
         serializedVersion: 2
         x: 576
@@ -200,16 +200,16 @@ TextureImporter:
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 8ba1fa5ea0720e6a0800000000000000
-      internalID: -6422090140873712968
+      spriteID: 1d6a0dac326bd4769a273071913678d9
+      internalID: -621745958
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Pawn_Idle_4
+      name: Pawn_Idle-Blue_4
       rect:
         serializedVersion: 2
         x: 768
@@ -222,16 +222,16 @@ TextureImporter:
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 18f064ff2983bcb60800000000000000
-      internalID: 7767364186329714561
+      spriteID: b7ce8f954879649b6bf0e045b946a3c8
+      internalID: 1147438
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Pawn_Idle_5
+      name: Pawn_Idle-Blue_5
       rect:
         serializedVersion: 2
         x: 960
@@ -244,16 +244,16 @@ TextureImporter:
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: e4613822926f4f1b0800000000000000
-      internalID: -5623599378145798578
+      spriteID: 72e3e44dd3ff04aa38cbf0e72f83aa77
+      internalID: -390454821
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Pawn_Idle_6
+      name: Pawn_Idle-Blue_6
       rect:
         serializedVersion: 2
         x: 1152
@@ -266,16 +266,16 @@ TextureImporter:
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 132bb3152f8de75b0800000000000000
-      internalID: -5368615170522500559
+      spriteID: c15b7415b93a9446882b8491f8635a6e
+      internalID: -1732264536
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Pawn_Idle_7
+      name: Pawn_Idle-Blue_7
       rect:
         serializedVersion: 2
         x: 1344
@@ -288,10 +288,10 @@ TextureImporter:
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 90029693cc56cfb40800000000000000
-      internalID: 5475363174786605065
+      spriteID: 98953a22d07844fcb85176d67e822f1a
+      internalID: 262790160
       vertices: []
       indices: 
       edges: []
@@ -300,7 +300,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: e1fcf57c52ea74186bc9ae68671972b1
+    spriteID: e4258542071044b2f8773581bb0f6ac9
     internalID: 0
     vertices: []
     indices: 
@@ -312,14 +312,14 @@ TextureImporter:
       - key: SpriteEditor.SliceSettings
         value: '{"sliceOnImport":false,"gridCellCount":{"x":8.0,"y":1.0},"gridSpriteSize":{"x":192.0,"y":192.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
-      Pawn_Idle_0: -5948806968594788206
-      Pawn_Idle_1: -3890830800090718979
-      Pawn_Idle_2: 5745166470278179504
-      Pawn_Idle_3: -6422090140873712968
-      Pawn_Idle_4: 7767364186329714561
-      Pawn_Idle_5: -5623599378145798578
-      Pawn_Idle_6: -5368615170522500559
-      Pawn_Idle_7: 5475363174786605065
+      Pawn_Idle-Blue_0: -1598845503
+      Pawn_Idle-Blue_1: -1231381017
+      Pawn_Idle-Blue_2: 1447432090
+      Pawn_Idle-Blue_3: -621745958
+      Pawn_Idle-Blue_4: 1147438
+      Pawn_Idle-Blue_5: -390454821
+      Pawn_Idle-Blue_6: -1732264536
+      Pawn_Idle-Blue_7: 262790160
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

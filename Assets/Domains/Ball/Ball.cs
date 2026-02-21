@@ -53,7 +53,7 @@ public class Ball : MonoBehaviour
     /// <summary>
     /// Topun belli bir pozisyona (Pota gibi) uçması
     /// </summary>
-    public void FlyToPosition(Vector3 targetPos, bool isGoal)
+    public void FlyToPosition(Vector3 targetPos, bool isGoal, TeamColor scorerTeam)
     {
         if (currentOwner != null)
         {
@@ -78,6 +78,16 @@ public class Ball : MonoBehaviour
                 if (isGoal)
                 {
                     Debug.Log("<color=orange>GOAL EFFECT!</color>");
+                    if (UIManager.Instance != null)
+                    {
+                        UIManager.Instance.AddScore(scorerTeam, 2); 
+                    }
+                    
+                    // Maçı resetlemesi için TurnManager'ı çağır
+                    if (TurnManager.Instance != null)
+                    {
+                        TurnManager.Instance.OnGoalScored(scorerTeam);
+                    }
                 }
                 SetOwner(null);
             });

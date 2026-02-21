@@ -7,11 +7,14 @@ public class PlayerUnit : MonoBehaviour
 {
     [Header("Player Data")]
     public PlayerUnitData unitData;
+    public TeamColor team; // Takım bilgisi eklendi
 
     [Header("Current State")]
+    public Vector2Int startingGridPos; // Reset için eklendi
     public Vector2Int currentGridPos;
     public bool hasBall = false;
     public bool isStunned = false;
+    public bool hasActed = false; 
 
     [Header("Movement Settings")]
     public float moveDuration = 0.4f;
@@ -24,17 +27,50 @@ public class PlayerUnit : MonoBehaviour
 
     private GridManager gridManager;
 
-    private void Start()
+    public void Initialize(PlayerUnitData data, TeamColor teamColor, Vector2Int startPos)
     {
+        unitData = data;
+        team = teamColor;
+        startingGridPos = startPos; // Sakla
+        currentGridPos = startPos;
+        
         gridManager = Object.FindFirstObjectByType<GridManager>();
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        
         SnapToGrid();
         UpdateVisuals();
     }
 
+    public void ResetToStart()
+    {
+        currentGridPos = startingGridPos;
+        hasActed = false;
+        isStunned = false;
+        hasBall = false;
+        SnapToGrid();
+        UpdateVisuals();
+    }
+
+    private void Start()
+    {
+        // Initialize çağrıldığı için Start'ta tekrar gridManager bulmaya gerek yok ama güvenlik için:
+        if (gridManager == null) gridManager = Object.FindFirstObjectByType<GridManager>();
+        if (spriteRenderer == null) spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+    }
+
     public void UpdateVisuals()
     {
-        if (spriteRenderer != null)
+        if (spriteRenderer == null || unitData == null) return;
+
+        // 1. Takıma göre sprite'ı ayarla
+        spriteRenderer.sprite = (team == TeamColor.Blue) ? unitData.blueTeamSprite : unitData.redTeamSprite;
+
+        // 2. Duruma göre rengi/tinti ayarla
+        if (isStunned)
+        {
+            spriteRenderer.color = Color.gray;
+        }
+        else
         {
             spriteRenderer.color = hasBall ? colorHasBall : colorNoBall;
         }
@@ -135,7 +171,6 @@ public class PlayerUnit : MonoBehaviour
     {
         if (!hasBall || targetHoop == null) return;
 
-        // CD: Mesafe +1 per tile
         int distance = Mathf.Abs(targetHoop.gridPos.x - currentGridPos.x) + Mathf.Abs(targetHoop.gridPos.y - currentGridPos.y);
         
         int roll = Random.Range(1, 7);
@@ -145,26 +180,67 @@ public class PlayerUnit : MonoBehaviour
         bool success = totalValue >= distance;
 
         if (UIManager.Instance != null)
-        {
             UIManager.Instance.ShowDiceResult(roll, bonus, distance, success);
-        }
-
-        Debug.Log($"Shoot attempt by {unitData?.playerName} to {targetHoop.hoopTeam} hoop. CD: {distance}, Total: {totalValue}");
 
         hasBall = false;
         UpdateVisuals();
 
         if (success)
         {
-            Debug.Log("<color=gold>GOAL! Score!</color>");
-            Ball.Instance.FlyToPosition(targetHoop.transform.position, true);
+            Ball.Instance.FlyToPosition(targetHoop.transform.position, true, team);
         }
         else
         {
-            Debug.Log("<color=red>Shot Missed!</color>");
-            // Iska geçince top potadan seker (Rastgele bir yöne bounce)
             Vector3 randomDir = new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), 0);
-            Ball.Instance.FlyToDistance(currentGridPos, randomDir, 3); // 3 kare uzağa seker
+            Ball.Instance.FlyToDistance(currentGridPos, randomDir, 3);
         }
+        
+        hasActed = true;
+    }
+
+    public void Attack(PlayerUnit targetPlayer)
+    {
+        if (hasBall) 
+        {
+            Debug.Log("Cannot attack while holding the ball!");
+            return;
+        }
+
+        // Zar Atışları
+        int myRoll = Random.Range(1, 7);
+        int myBonus = (unitData != null ? unitData.defenceBonus : 0);
+        int myTotal = myRoll + myBonus;
+
+        int targetRoll = Random.Range(1, 7);
+        int targetBonus = (targetPlayer.unitData != null ? targetPlayer.unitData.defenceBonus : 0);
+        int targetTotal = targetRoll + targetBonus;
+
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.diceResultText.text = $"Combat! {myTotal} vs {targetTotal}";
+        }
+
+        // Görsel olarak rakibin karesine git
+        StartCoroutine(MoveTo(targetPlayer.currentGridPos));
+
+        if (myTotal > targetTotal)
+        {
+            targetPlayer.Stun();
+            if (targetPlayer.hasBall) Ball.Instance.SetOwner(this);
+        }
+        else
+        {
+            this.Stun();
+            if (this.hasBall) Ball.Instance.SetOwner(targetPlayer);
+        }
+        
+        hasActed = true;
+    }
+
+    public void Stun()
+    {
+        isStunned = true;
+        UpdateVisuals(); 
+        Debug.Log($"{unitData?.playerName} is STUNNED!");
     }
 }

@@ -11,4 +11,9 @@ public class PlayerUnitData : ScriptableObject
     public int shootingBonus = 0;
     public int passingBonus = 0;
     public int defenceBonus = 0;
+
+    [Header("Visuals")]
+    public Sprite blueTeamSprite;
+    public Sprite redTeamSprite;
+    // public Sprite playerIcon;
 }
