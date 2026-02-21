@@ -13,71 +13,95 @@ public class InputController : MonoBehaviour
 
     private void Update()
     {
-        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
-        {
-            Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
-            Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(new Vector3(mouseScreenPos.x, mouseScreenPos.y, 10f));
-            mouseWorldPos.z = 0; 
-            
-            Vector2Int clickedGridPos = gridManager.GetGridPosition(mouseWorldPos);
+        if (Mouse.current == null) return;
 
-            // Tıklanan yer grid dışındaysa seçimi bırak
-            if (!gridManager.IsInBounds(clickedGridPos))
+        Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
+        Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(new Vector3(mouseScreenPos.x, mouseScreenPos.y, 10f));
+        mouseWorldPos.z = 0; 
+        
+        Vector2Int currentGridPos = gridManager.GetGridPosition(mouseWorldPos);
+
+        if (Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            RaycastHit2D hit = Physics2D.Raycast(mouseWorldPos, Vector2.zero);
+            
+            // 1. ŞUT KONTROLÜ
+            if (hit.collider != null)
             {
-                DeselectPlayer();
-                return;
+                Hoop hoop = hit.collider.GetComponent<Hoop>();
+                if (hoop != null && selectedPlayer != null && selectedPlayer.hasBall)
+                {
+                    selectedPlayer.Shoot(hoop);
+                    DeselectPlayer();
+                    return;
+                }
             }
 
-            HandleClick(clickedGridPos);
+            // 2. OYUNCU KONTROLÜ (Raycast veya Grid üzerinden)
+            PlayerUnit clickedPlayer = null;
+            if (hit.collider != null) clickedPlayer = hit.collider.GetComponentInParent<PlayerUnit>();
+            if (clickedPlayer == null) clickedPlayer = GetPlayerAt(currentGridPos);
+
+            if (gridManager.IsInBounds(currentGridPos))
+            {
+                Debug.Log($"<color=white>Clicked on Grid: {currentGridPos}</color>");
+            }
+
+            if (clickedPlayer != null)
+            {
+                HandlePlayerClick(clickedPlayer);
+            }
+            else if (gridManager.IsInBounds(currentGridPos))
+            {
+                HandleEmptyTileClick(currentGridPos);
+            }
+            else
+            {
+                DeselectPlayer();
+            }
         }
     }
 
-    private void HandleClick(Vector2Int gridPos)
+    private void HandlePlayerClick(PlayerUnit clickedPlayer)
     {
-        PlayerUnit clickedPlayer = GetPlayerAt(gridPos);
-
-        if (clickedPlayer != null)
+        // PAS ATMA
+        if (selectedPlayer != null && selectedPlayer.hasBall && selectedPlayer != clickedPlayer)
         {
-            // Eğer elimizde top varsa ve başka bir oyuncuya tıkladıysak: PAS AT
-            if (selectedPlayer != null && selectedPlayer.hasBall && selectedPlayer != clickedPlayer)
-            {
-                selectedPlayer.Pass(clickedPlayer);
-                DeselectPlayer();
-                return;
-            }
-
-            // Eğer aynı oyuncuya tekrar basarsak seçimi bırak
-            if (selectedPlayer == clickedPlayer)
-            {
-                DeselectPlayer();
-                return;
-            }
-
-            selectedPlayer = clickedPlayer;
-            string pName = (selectedPlayer.unitData != null) ? selectedPlayer.unitData.playerName : "Unnamed Player (Missing UnitData)";
-            Debug.Log("Selected Player: " + pName);
-
-            if (selectedPlayer.unitData != null)
-            {
-                gridManager.ShowMovementRange(selectedPlayer.currentGridPos, selectedPlayer.unitData.speed);
-            }
+            Debug.Log($"Passing to {clickedPlayer.name}");
+            selectedPlayer.Pass(clickedPlayer);
+            DeselectPlayer();
+            return;
         }
-        else if (selectedPlayer != null)
+
+        // SEÇİMİ İPTAL
+        if (selectedPlayer == clickedPlayer)
         {
-            // Hareket etmeye çalış
+            DeselectPlayer();
+            return;
+        }
+
+        // YENİ SEÇİM
+        selectedPlayer = clickedPlayer;
+        Debug.Log("Selected: " + (selectedPlayer.unitData != null ? selectedPlayer.unitData.playerName : "Unknown"));
+        
+        if (selectedPlayer.unitData != null)
+        {
+            gridManager.ShowMovementRange(selectedPlayer.currentGridPos, selectedPlayer.unitData.speed);
+        }
+    }
+
+    private void HandleEmptyTileClick(Vector2Int gridPos)
+    {
+        if (selectedPlayer != null)
+        {
             if (selectedPlayer.IsInMovementRange(gridPos))
             {
                 StartCoroutine(selectedPlayer.MoveTo(gridPos));
-                Debug.Log("Moving " + (selectedPlayer.unitData != null ? selectedPlayer.unitData.playerName : "Player") + " to " + gridPos);
-                
-                // Hareket başlayınca highlight'ı temizle ve seçimi bırak (Veya seçili kalsın istersen bırakmayabiliriz)
                 DeselectPlayer(); 
             }
             else
             {
-                // Menzil dışı boş bir yere tıklandıysa seçimi bırak
                 DeselectPlayer();
-                Debug.Log("Clicked empty tile out of range. Deselecting.");
             }
         }
     }
@@ -85,8 +109,8 @@ public class InputController : MonoBehaviour
     private void DeselectPlayer()
     {
         selectedPlayer = null;
-        gridManager.ClearHighlights();
-        Debug.Log("Player Deselected.");
+        if (gridManager != null) gridManager.ClearHighlights();
+        Debug.Log("Deselected.");
     }
 
     private PlayerUnit GetPlayerAt(Vector2Int gridPos)

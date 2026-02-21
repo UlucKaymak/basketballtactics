@@ -95,7 +95,7 @@ public class PlayerUnit : MonoBehaviour
     {
         if (!hasBall || targetPlayer == null || targetPlayer == this) return;
 
-        // Challenge Difficulty (CD): Her tile mesafesi için +1 (GDD kuralı)
+        // CD: Her tile mesafesi için +1
         int distance = Mathf.Abs(targetPlayer.currentGridPos.x - currentGridPos.x) + Mathf.Abs(targetPlayer.currentGridPos.y - currentGridPos.y);
         
         int roll = Random.Range(1, 7); // d6
@@ -104,7 +104,6 @@ public class PlayerUnit : MonoBehaviour
 
         bool success = totalValue >= distance;
 
-        // UI'ya yazdır
         if (UIManager.Instance != null)
         {
             UIManager.Instance.ShowDiceResult(roll, bonus, distance, success);
@@ -112,22 +111,60 @@ public class PlayerUnit : MonoBehaviour
 
         Debug.Log($"Pass attempt by {unitData?.playerName} to {targetPlayer.unitData?.playerName}. Target CD: {distance}, Total: {totalValue}");
 
+        hasBall = false;
+        UpdateVisuals();
+
         if (success)
         {
             Debug.Log("<color=green>Pass Successful!</color>");
-            hasBall = false; // Topu elinden çıkardı
-            UpdateVisuals();
             Ball.Instance.FlyTo(targetPlayer);
         }
         else
         {
             Debug.Log("<color=red>Pass Failed!</color>");
-            hasBall = false; // Topu elinden çıkardı (fail olsa da)
-            UpdateVisuals();
-            
-            // Zar sonucu kadar mesafeye topu düşür
+            // Atılan toplam zar (roll + bonus) kadar mesafeye topu düşür
             Vector3 direction = targetPlayer.transform.position - transform.position;
-            Ball.Instance.FlyToDistance(direction, totalValue); 
+            Ball.Instance.FlyToDistance(currentGridPos, direction, totalValue); 
+        }
+    }
+
+    /// <summary>
+    /// Try to shoot the ball into a hoop.
+    /// </summary>
+    public void Shoot(Hoop targetHoop)
+    {
+        if (!hasBall || targetHoop == null) return;
+
+        // CD: Mesafe +1 per tile
+        int distance = Mathf.Abs(targetHoop.gridPos.x - currentGridPos.x) + Mathf.Abs(targetHoop.gridPos.y - currentGridPos.y);
+        
+        int roll = Random.Range(1, 7);
+        int bonus = (unitData != null ? unitData.shootingBonus : 0);
+        int totalValue = roll + bonus;
+
+        bool success = totalValue >= distance;
+
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.ShowDiceResult(roll, bonus, distance, success);
+        }
+
+        Debug.Log($"Shoot attempt by {unitData?.playerName} to {targetHoop.hoopTeam} hoop. CD: {distance}, Total: {totalValue}");
+
+        hasBall = false;
+        UpdateVisuals();
+
+        if (success)
+        {
+            Debug.Log("<color=gold>GOAL! Score!</color>");
+            Ball.Instance.FlyToPosition(targetHoop.transform.position, true);
+        }
+        else
+        {
+            Debug.Log("<color=red>Shot Missed!</color>");
+            // Iska geçince top potadan seker (Rastgele bir yöne bounce)
+            Vector3 randomDir = new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), 0);
+            Ball.Instance.FlyToDistance(currentGridPos, randomDir, 3); // 3 kare uzağa seker
         }
     }
 }

@@ -15,15 +15,27 @@ public class GridManager : MonoBehaviour
     [Header("Visuals (Optional)")]
     [SerializeField] private bool showGizmos = true;
     [SerializeField] private Color gridColor = Color.white;
-    [SerializeField] private Color highlightColor = new Color(0.5f, 1f, 0.5f, 1f); // Tint Color
+    [SerializeField] private Color targetHighlightColor = Color.aquamarine;
 
     private List<Vector3Int> highlightedTiles = new List<Vector3Int>();
+
+    public void HighlightTile(Vector2Int gridPos)
+    {
+        Vector3Int pos = new Vector3Int(gridPos.x, gridPos.y, 0);
+        if (tilemap != null)
+        {
+            tilemap.SetTileFlags(pos, TileFlags.None);
+            tilemap.SetColor(pos, targetHighlightColor);
+            highlightedTiles.Add(pos);
+        }
+    }
 
     public void ShowMovementRange(Vector2Int center, int range)
     {
         ClearHighlights();
-
         if (tilemap == null) return;
+
+        Color moveRangeColor = new Color(0.5f, 1f, 0.5f, 1f); // Light Green
 
         for (int x = 0; x < width; x++)
         {
@@ -33,11 +45,8 @@ public class GridManager : MonoBehaviour
                 if (distance <= range)
                 {
                     Vector3Int pos = new Vector3Int(x, y, 0);
-                    
-                    // Tilemap üzerindeki rengi değiştir
-                    tilemap.SetTileFlags(pos, TileFlags.None); // Lock'ı kaldır ki rengi değiştirebilelim
-                    tilemap.SetColor(pos, highlightColor);
-                    
+                    tilemap.SetTileFlags(pos, TileFlags.None);
+                    tilemap.SetColor(pos, moveRangeColor);
                     highlightedTiles.Add(pos);
                 }
             }
@@ -50,7 +59,7 @@ public class GridManager : MonoBehaviour
 
         foreach (var pos in highlightedTiles)
         {
-            tilemap.SetColor(pos, Color.white); // Rengi normale döndür (Beyaz = Orijinal)
+            tilemap.SetColor(pos, Color.white);
         }
         highlightedTiles.Clear();
     }

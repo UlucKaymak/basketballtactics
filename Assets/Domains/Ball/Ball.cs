@@ -34,8 +34,16 @@ public class Ball : MonoBehaviour
         }
         currentOwner = null; 
         
-        // DOJump yerine DOMove kullanarak düz bir çizgide pas atma
-        transform.DOMove(targetPlayer.transform.position + new Vector3(0, 0.5f, 0), passDuration)
+        GridManager gm = Object.FindFirstObjectByType<GridManager>();
+        Vector3 finalPos = targetPlayer.transform.position;
+
+        if (gm != null)
+        {
+            // Oyuncunun bulunduğu karesinin tam merkezine atıyoruz
+            finalPos = gm.GetWorldPosition(targetPlayer.currentGridPos.x, targetPlayer.currentGridPos.y);
+        }
+
+        transform.DOMove(finalPos, passDuration)
             .SetEase(Ease.OutQuad)
             .OnComplete(() => {
                 SetOwner(targetPlayer);
@@ -43,9 +51,42 @@ public class Ball : MonoBehaviour
     }
 
     /// <summary>
+    /// Topun belli bir pozisyona (Pota gibi) uçması
+    /// </summary>
+    public void FlyToPosition(Vector3 targetPos, bool isGoal)
+    {
+        if (currentOwner != null)
+        {
+            currentOwner.hasBall = false;
+            currentOwner.UpdateVisuals();
+        }
+        currentOwner = null;
+
+        GridManager gm = Object.FindFirstObjectByType<GridManager>();
+        Vector3 finalPos = targetPos;
+
+        if (gm != null)
+        {
+            // Potanın olduğu karesinin tam merkezine atıyoruz
+            Vector2Int hoopGrid = gm.GetGridPosition(targetPos);
+            finalPos = gm.GetWorldPosition(hoopGrid.x, hoopGrid.y);
+        }
+
+        transform.DOMove(finalPos, passDuration)
+            .SetEase(Ease.OutQuad)
+            .OnComplete(() => {
+                if (isGoal)
+                {
+                    Debug.Log("<color=orange>GOAL EFFECT!</color>");
+                }
+                SetOwner(null);
+            });
+    }
+
+    /// <summary>
     /// Pas başarısız olduğunda topun zar kadar mesafeye zıplayarak (bounce) düşmesi
     /// </summary>
-    public void FlyToDistance(Vector3 direction, int distance)
+    public void FlyToDistance(Vector2Int startGridPos, Vector3 direction, int distance)
     {
         // Önceki sahibinden tamamen ayır
         if (currentOwner != null)
@@ -55,35 +96,37 @@ public class Ball : MonoBehaviour
         }
         currentOwner = null;
         
-        float currentTileSize = 1f;
         GridManager gm = Object.FindFirstObjectByType<GridManager>();
-        if (gm != null) currentTileSize = gm.tileSize;
+        if (gm == null) return;
 
         direction.z = 0; 
         Vector3 flatDirection = direction.normalized;
 
-        // Hedeflenen zıplama noktası
-        Vector3 targetPos = transform.position + (flatDirection * (distance * currentTileSize));
+        // Hedeflenen Tile'ı hesapla
+        Vector3 startWorldPos = gm.GetWorldPosition(startGridPos.x, startGridPos.y);
+        float targetDist = (distance * gm.tileSize) - 0.1f;
+        Vector3 calculatedTargetPos = startWorldPos + (flatDirection * targetDist);
+        Vector2Int targetGrid = gm.GetGridPosition(calculatedTargetPos);
 
-        // Bounce Efekti (DOJump ile 2-3 küçük zıplama)
-        // İlk büyük zıplama/uçuş (0.5 saniye)
-        transform.DOJump(targetPos, 0.5f, 1, 0.6f)
+        // Grid'in TAM merkezini al
+        Vector3 snappedTargetPos = gm.GetWorldPosition(targetGrid.x, targetGrid.y);
+
+        // Maviyle highlightla
+        gm.HighlightTile(targetGrid);
+        Debug.Log($"<color=aqua>Ball targeting Grid: {targetGrid}</color>");
+
+        // Bounce Efekti (Snapped pozisyona git)
+        transform.DOJump(snappedTargetPos, 0.5f, 1, 0.6f)
             .SetEase(Ease.OutQuad)
             .OnComplete(() => {
-                // İkinci küçük zıplama (Bounce)
-                transform.DOJump(transform.position + (flatDirection * 0.5f), 0.2f, 1, 0.3f)
+                transform.DOJump(snappedTargetPos, 0.2f, 1, 0.3f)
                     .SetEase(Ease.OutQuad)
                     .OnComplete(() => {
-                        SnapToGridAndFinalize(gm);
+                        SetOwner(null);
+                        gm.ClearHighlights(); // İşlem bitince temizle
+                        Debug.Log("Ball settled in grid center.");
                     });
             });
-    }
-
-    private void SnapToGridAndFinalize(GridManager gm)
-    {
-        // Grid'e sabitlemeyi kaldırdık, sadece olduğu yerde bırakıyoruz.
-        SetOwner(null); 
-        Debug.Log("Ball bounced and stayed where it landed.");
     }
 
     public void SetOwner(PlayerUnit player)
