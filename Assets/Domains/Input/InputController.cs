@@ -38,6 +38,14 @@ public class InputController : MonoBehaviour
 
         if (clickedPlayer != null)
         {
+            // Eğer elimizde top varsa ve başka bir oyuncuya tıkladıysak: PAS AT
+            if (selectedPlayer != null && selectedPlayer.hasBall && selectedPlayer != clickedPlayer)
+            {
+                selectedPlayer.Pass(clickedPlayer);
+                DeselectPlayer();
+                return;
+            }
+
             // Eğer aynı oyuncuya tekrar basarsak seçimi bırak
             if (selectedPlayer == clickedPlayer)
             {

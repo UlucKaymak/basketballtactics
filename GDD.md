@@ -15,8 +15,16 @@
 * **Bounds:** 0-6 x, 0-11 y aralığındadır.
 
 ## Input & Control
-* **InputController:** Fare tıklamalarıyla oyuncu seçimi ve hareket kontrolü sağlar. **Implemented (InputController.cs)**
+* **InputController:** Fare tıklamalarıyla oyuncu seçimi, hareket ve pas kontrolü sağlar. **Implemented (InputController.cs)**
 * **Movement Logic:** Manhattan mesafesi (x_diff + y_diff) kullanılarak hız sınırına göre hareket kontrolü yapılır.
+
+---
+
+# Ball & Passing
+* **Ball:** Sahada tek bir top objesi bulunur, oyuncuları takip eder. **Implemented (Ball.cs)**
+* **Pass Action:** Elinde top olan oyuncu, başka bir oyuncuya tıkladığında pas atar.
+* **Challenge Difficulty (CD):** Pas mesafesi (Manhattan) = CD.
+* **Dice Check:** 1d6 + Passing Bonus >= CD ise pas başarılıdır. **Implemented (PlayerUnit.cs)**
 
 ---
 

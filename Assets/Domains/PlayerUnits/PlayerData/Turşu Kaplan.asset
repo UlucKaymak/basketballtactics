@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da23b8103cc744290bc28ae5d0a12279, type: 3}
   m_Name: "Tur\u015Fu Kaplan"
   m_EditorClassIdentifier: Assembly-CSharp::PlayerUnitData
-  playerName: Ahmet Muhsin
+  playerName: "Tur\u015Fu Kaplan"
   speed: 2
   shootingBonus: 3
   passingBonus: 2
