@@ -30,26 +30,19 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    public void ShowMovementRange(Vector2Int center, int range)
+    public void ShowMovementRange(List<Vector2Int> reachableTiles)
     {
         ClearHighlights();
         if (tilemap == null) return;
 
         Color moveRangeColor = new Color(0.5f, 1f, 0.5f, 1f); // Light Green
 
-        for (int x = 0; x < width; x++)
+        foreach (var tilePos in reachableTiles)
         {
-            for (int y = 0; y < height; y++)
-            {
-                int distance = Mathf.Abs(x - center.x) + Mathf.Abs(y - center.y);
-                if (distance <= range)
-                {
-                    Vector3Int pos = new Vector3Int(x, y, 0);
-                    tilemap.SetTileFlags(pos, TileFlags.None);
-                    tilemap.SetColor(pos, moveRangeColor);
-                    highlightedTiles.Add(pos);
-                }
-            }
+            Vector3Int pos = new Vector3Int(tilePos.x, tilePos.y, 0);
+            tilemap.SetTileFlags(pos, TileFlags.None);
+            tilemap.SetColor(pos, moveRangeColor);
+            highlightedTiles.Add(pos);
         }
     }
 
@@ -122,5 +115,20 @@ public class GridManager : MonoBehaviour
     public bool IsInBounds(Vector2Int pos)
     {
         return IsInBounds(pos.x, pos.y);
+    }
+
+    public PlayerUnit GetPlayerAt(Vector2Int gridPos)
+    {
+        PlayerUnit[] allPlayers = Object.FindObjectsByType<PlayerUnit>(FindObjectsSortMode.None);
+        foreach (var p in allPlayers)
+        {
+            if (p.currentGridPos == gridPos) return p;
+        }
+        return null;
+    }
+
+    public bool IsTileOccupied(Vector2Int gridPos)
+    {
+        return GetPlayerAt(gridPos) != null;
     }
 }

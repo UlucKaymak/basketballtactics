@@ -86,8 +86,56 @@ public class PlayerUnit : MonoBehaviour
 
     public bool IsInMovementRange(Vector2Int targetPos)
     {
-        int distance = Mathf.Abs(targetPos.x - currentGridPos.x) + Mathf.Abs(targetPos.y - currentGridPos.y);
-        return distance <= (unitData != null ? unitData.speed : 0);
+        // Hedef kare doluysa (ve hedef biz değilsek) oraya gidemeyiz
+        if (gridManager != null && gridManager.IsTileOccupied(targetPos) && targetPos != currentGridPos)
+        {
+            // NOT: Combat için rakip karesini seçebiliyoruz, onu InputController halledecek.
+            // Ama düz yürüme için hedef boş olmalı.
+            return false; 
+        }
+
+        List<Vector2Int> reachable = GetReachableTiles();
+        return reachable.Contains(targetPos);
+    }
+
+    public List<Vector2Int> GetReachableTiles()
+    {
+        List<Vector2Int> reachableTiles = new List<Vector2Int>();
+        if (unitData == null || gridManager == null) return reachableTiles;
+
+        Queue<(Vector2Int pos, int dist)> queue = new Queue<(Vector2Int, int)>();
+        queue.Enqueue((currentGridPos, 0));
+        
+        HashSet<Vector2Int> visited = new HashSet<Vector2Int>();
+        visited.Add(currentGridPos);
+
+        Vector2Int[] neighbors = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+
+        while (queue.Count > 0)
+        {
+            var (current, dist) = queue.Dequeue();
+            
+            if (dist > 0) reachableTiles.Add(current); // Kendi karemizi eklemeyelim
+
+            if (dist >= unitData.speed) continue;
+
+            foreach (var offset in neighbors)
+            {
+                Vector2Int next = current + offset;
+
+                if (gridManager.IsInBounds(next) && !visited.Contains(next))
+                {
+                    // GDD: Başka bir oyuncu varsa o kare duvar sayılır (geçilemez)
+                    if (!gridManager.IsTileOccupied(next))
+                    {
+                        visited.Add(next);
+                        queue.Enqueue((next, dist + 1));
+                    }
+                }
+            }
+        }
+
+        return reachableTiles;
     }
 
     public IEnumerator MoveTo(Vector2Int targetPos)

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: KertenLeke
   m_EditorClassIdentifier: Assembly-CSharp::PlayerUnitData
   playerName: Kerten Leke
-  speed: 2
+  speed: 3
   shootingBonus: 3
   passingBonus: 2
   defenceBonus: 1

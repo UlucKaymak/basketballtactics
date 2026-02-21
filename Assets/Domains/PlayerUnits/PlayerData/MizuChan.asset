@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: MizuChan
   m_EditorClassIdentifier: Assembly-CSharp::PlayerUnitData
   playerName: Mizu Chan
-  speed: 2
+  speed: 3
   shootingBonus: 3
   passingBonus: 2
   defenceBonus: 1

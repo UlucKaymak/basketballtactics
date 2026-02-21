@@ -12,6 +12,8 @@
 ## Managers
 * **MatchSetter:** Oyunun başlangıcında Scriptable Object listelerinden oyuncuları spawn eder, takımları kurar ve topu ilk takıma teslim eder. **Implemented (MatchSetter.cs)**
 * **TurnManager:** Takımların (Red/Blue) sıralarını yönetir. Tur başlarında aksiyon haklarını sıfırlar ve stun durumlarını çözer. **Implemented (TurnManager.cs)**
+    * **Reset Logic:** Gol atıldığında tüm oyuncular başlangıç pozisyonlarına döner ve top golü atan takıma verilir.
+    * **Inspector Controls:** NaughtyAttributes kullanılarak "Skip Turn" butonu eklenmiştir.
 * **GridManager:** 7x12 boyutunda, Unity Tilemap sistemi ile entegre grid yönetimi. **Implemented (GridManager.cs)**
 
 ## Input & Control
@@ -28,19 +30,18 @@ Her oyuncu kendi turunda sadece **bir (1)** aksiyon alabilir. Oyuncu seçildiği
 2. **Pass:** Top varsa, takım arkadaşına fırlatır.
 3. **Shoot:** Top varsa, potaya fırlatır.
 4. **Wait:** Aksiyon almadan turu bitirir.
+* **Auto-End Turn:** Takımdaki tüm oyuncular aksiyonlarını bitirdiğinde sıra otomatik olarak diğer takıma geçer.
 
 ## Ball, Passing & Shooting
 * **Ball:** Sahada tek bir top objesi bulunur, oyuncuları takip eder. **Implemented (Ball.cs)**
 * **Targeting:** Pas veya şut fırlatılmadan önce topun düşeceği hedef kare **Mavi** ile işaretlenir.
 * **Movement:** Top, DOTween kullanılarak hedefine uçar; başarısız atışlarda yere seker (Bounce).
-* **Challenge Difficulty (CD):** Mesafe (Manhattan) = CD.
-* **Dice Check:** 1d6 + Bonus >= CD ise başarılıdır. 
+* **Dice Check:** 1d6 + Bonus >= Mesafe (CD) ise başarılıdır. 
 
 ## Combat (Steal & Stun)
 * **Attack:** Elinde top olmayan bir oyuncu, hareket menzili içindeki bir rakibe tıklarsa saldırır.
 * **Logic:** Saldıran (d6 + Defence Bonus) vs Savunan (d6 + Defence Bonus).
 * **Outcome:** Kazanan taraf topu alır (eğer varsa) ve kaybeden tarafı 1 turluğuna **Stun** eder.
-* **Stun:** Stunlanan oyuncu grileşir ve o tur aksiyon alamaz.
 
 ---
 
@@ -48,16 +49,14 @@ Her oyuncu kendi turunda sadece **bir (1)** aksiyon alabilir. Oyuncu seçildiği
 Oyuncular scriptable object olarak üretilecek. **Implemented (PlayerUnitData.cs & PlayerUnit.cs)**
 
 ### Player Stats
-* Name - Oyuncu adı
-* Speed - Hareket edebildiği tile sınırı
-* Shooting - Shoot bonus
-* Passing - Pass bonus
-* Defence - Defence bonus
+* Name, Speed, Shooting, Passing, Defence bonusları.
 
 ### Görsel Durumlar
-* **Yeşil:** Topa sahip oyuncu.
-* **Kırmızı:** Topu olmayan aktif oyuncu.
-* **Gri:** Stunlanmış oyuncu.
+* **Team Sprites:** Oyuncunun takımına göre (Red/Blue) farklı sprite'lar otomatik yüklenir.
+* **Tint Feedback:**
+    * **Yeşil:** Topa sahip oyuncu.
+    * **Kırmızı:** Topu olmayan aktif oyuncu.
+    * **Gri:** Stunlanmış oyuncu.
 
 ---
 

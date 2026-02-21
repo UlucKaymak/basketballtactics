@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.EventSystems;
+using System.Collections.Generic;
 
 public enum ActionMode { None, Moving, Passing, Shooting }
 
@@ -19,7 +20,6 @@ public class InputController : MonoBehaviour
     {
         if (Mouse.current == null) return;
 
-        // UI üzerine tıklandığında oyun içi kontrolleri devre dışı bırak
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
         {
             return;
@@ -35,14 +35,13 @@ public class InputController : MonoBehaviour
         {
             RaycastHit2D hit = Physics2D.Raycast(mouseWorldPos, Vector2.zero);
             
-            // 1. ŞUT KONTROLÜ (Eğer Shooting Modundaysak)
+            // 1. ŞUT KONTROLÜ
             if (currentMode == ActionMode.Shooting && hit.collider != null)
             {
                 Hoop hoop = hit.collider.GetComponent<Hoop>();
                 if (hoop != null && selectedPlayer != null)
                 {
                     selectedPlayer.Shoot(hoop);
-                    selectedPlayer.hasActed = true; // AKSİYON BİTTİ
                     DeselectPlayer();
                     return;
                 }
@@ -51,13 +50,18 @@ public class InputController : MonoBehaviour
             // 2. OYUNCU KONTROLÜ
             PlayerUnit clickedPlayer = null;
             if (hit.collider != null) clickedPlayer = hit.collider.GetComponentInParent<PlayerUnit>();
-            if (clickedPlayer == null) clickedPlayer = GetPlayerAt(currentGridPos);
+            if (clickedPlayer == null && gridManager != null) clickedPlayer = gridManager.GetPlayerAt(currentGridPos);
+
+            if (gridManager != null && gridManager.IsInBounds(currentGridPos))
+            {
+                Debug.Log($"<color=white>Clicked on Grid: {currentGridPos}</color>");
+            }
 
             if (clickedPlayer != null)
             {
                 HandlePlayerClick(clickedPlayer);
             }
-            else if (gridManager.IsInBounds(currentGridPos))
+            else if (gridManager != null && gridManager.IsInBounds(currentGridPos))
             {
                 HandleEmptyTileClick(currentGridPos);
             }
@@ -70,10 +74,14 @@ public class InputController : MonoBehaviour
 
     private void HandlePlayerClick(PlayerUnit clickedPlayer)
     {
-        // ATAK YAPMA: Moving modundayken rakibe tıklanırsa
+        // ATAK / COMBAT KONTROLÜ
         if (currentMode == ActionMode.Moving && selectedPlayer != null && selectedPlayer.team != clickedPlayer.team)
         {
-            if (selectedPlayer.IsInMovementRange(clickedPlayer.currentGridPos))
+            // Rakibin karesine Manhattan mesafesiyle bakabiliriz (Atak komutu için)
+            int dist = Mathf.Abs(selectedPlayer.currentGridPos.x - clickedPlayer.currentGridPos.x) + 
+                       Mathf.Abs(selectedPlayer.currentGridPos.y - clickedPlayer.currentGridPos.y);
+            
+            if (dist <= selectedPlayer.unitData.speed)
             {
                 selectedPlayer.Attack(clickedPlayer);
                 DeselectPlayer();
@@ -81,13 +89,12 @@ public class InputController : MonoBehaviour
             return;
         }
 
-        // PAS ATMA MODUNDAYSAK
+        // PAS ATMA
         if (currentMode == ActionMode.Passing && selectedPlayer != null && selectedPlayer != clickedPlayer)
         {
             if (selectedPlayer.team == clickedPlayer.team)
             {
                 selectedPlayer.Pass(clickedPlayer);
-                selectedPlayer.hasActed = true; // AKSİYON BİTTİ
                 DeselectPlayer();
             }
             return;
@@ -100,7 +107,7 @@ public class InputController : MonoBehaviour
             return;
         }
 
-        // YENİ SEÇİM (Sadece turu gelmiş ve aksiyon almamışsa)
+        // YENİ SEÇİM
         if (TurnManager.Instance != null && TurnManager.Instance.activeTeam == clickedPlayer.team && !clickedPlayer.hasActed)
         {
             selectedPlayer = clickedPlayer;
@@ -117,18 +124,19 @@ public class InputController : MonoBehaviour
             if (selectedPlayer.IsInMovementRange(gridPos))
             {
                 StartCoroutine(selectedPlayer.MoveTo(gridPos));
-                selectedPlayer.hasActed = true; // AKSİYON BİTTİ
+                selectedPlayer.hasActed = true; 
                 DeselectPlayer(); 
             }
         }
     }
 
-    // BUTTON CALLBACKS (Unity Editor'deki butonlara bunları bağlayın)
     public void OnMoveBtn() 
     { 
         currentMode = ActionMode.Moving; 
         if (selectedPlayer != null && gridManager != null)
-            gridManager.ShowMovementRange(selectedPlayer.currentGridPos, selectedPlayer.unitData.speed);
+        {
+            gridManager.ShowMovementRange(selectedPlayer.GetReachableTiles());
+        }
         if (UIManager.Instance != null) UIManager.Instance.HideActionPanel();
     }
 
@@ -152,7 +160,6 @@ public class InputController : MonoBehaviour
 
     private void DeselectPlayer()
     {
-        // Eğer bir oyuncu aksiyonunu bitirdiyse tur sonunu kontrol et
         if (selectedPlayer != null && selectedPlayer.hasActed)
         {
             if (TurnManager.Instance != null) TurnManager.Instance.CheckAutoEndTurn();
@@ -162,16 +169,5 @@ public class InputController : MonoBehaviour
         currentMode = ActionMode.None;
         if (gridManager != null) gridManager.ClearHighlights();
         if (UIManager.Instance != null) UIManager.Instance.HideActionPanel();
-    }
-
-    private PlayerUnit GetPlayerAt(Vector2Int gridPos)
-    {
-        PlayerUnit[] allPlayers = Object.FindObjectsByType<PlayerUnit>(FindObjectsSortMode.None);
-        foreach (var player in allPlayers)
-        {
-            if (player.currentGridPos == gridPos)
-                return player;
-        }
-        return null;
     }
 }
