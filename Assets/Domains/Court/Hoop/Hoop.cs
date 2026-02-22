@@ -1,7 +1,5 @@
 using UnityEngine;
 
-public enum TeamColor { Red, Blue }
-
 public class Hoop : MonoBehaviour
 {
     public TeamColor hoopTeam;
