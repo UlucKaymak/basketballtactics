@@ -14,30 +14,31 @@ public class PlayerUnit : MonoBehaviour
     public Vector2Int currentGridPos;
     public bool hasBall = false;
     public bool isStunned = false;
+    public int stunTurnsLeft = 0; 
     public bool hasActed = false; 
+    protected bool isHovered = false; // Hover durumu takibi
 
     [Header("Movement Settings")]
     public float moveDuration = 0.4f;
     public float jumpPower = 0.2f;
 
     [Header("Visual Feedback (Test)")]
-    public Color colorNoBall = Color.red;
     public Color colorHasBall = Color.green;
-    public SpriteRenderer highlightSprite; // Seçim halkası referansı
-    private SpriteRenderer spriteRenderer;
+    protected SpriteRenderer spriteRenderer;
 
-    private GridManager gridManager;
+    protected GridManager gridManager;
 
     public void SetSelected(bool isSelected)
     {
-        if (highlightSprite != null)
+        if (spriteRenderer != null)
         {
-            highlightSprite.gameObject.SetActive(isSelected);
             if (isSelected)
             {
-                // Seçildiğinde hafif bir zıplama animasyonu
-                highlightSprite.transform.localScale = Vector3.zero;
-                highlightSprite.transform.DOScale(Vector3.one * 1.2f, 0.2f).SetEase(Ease.OutBack);
+                transform.DOScale(Vector3.one * 1.1f, 0.2f).SetEase(Ease.OutBack);
+            }
+            else
+            {
+                transform.DOScale(Vector3.one, 0.2f).SetEase(Ease.Linear);
             }
         }
     }
@@ -68,23 +69,54 @@ public class PlayerUnit : MonoBehaviour
         currentGridPos = startingGridPos;
         hasActed = false;
         isStunned = false;
+        stunTurnsLeft = 0; 
         hasBall = false;
         
         if (gridManager != null)
         {
+            transform.position = gridManager.GetWorldPosition(currentGridPos.x, currentGridPos.y);
             gridManager.UpdateOccupantPositions(oldPos);
             gridManager.UpdateOccupantPositions(currentGridPos);
         }
         UpdateVisuals();
     }
 
-    public void UpdateVisuals()
+    public virtual void UpdateVisuals()
     {
         if (spriteRenderer == null || unitData == null) return;
-        spriteRenderer.sprite = (team == TeamColor.Blue) ? unitData.blueTeamSprite : unitData.redTeamSprite;
+        spriteRenderer.sprite = unitData.baseSprite;
 
-        if (isStunned) spriteRenderer.color = Color.gray;
-        else spriteRenderer.color = hasBall ? colorHasBall : colorNoBall;
+        TeamInfo info = TeamManager.Instance.GetTeamInfo(team);
+        Color baseColor = info.teamColor;
+
+        if (isStunned) 
+        {
+            baseColor = Color.gray;
+        }
+        else if (hasBall) 
+        {
+            baseColor = Color.Lerp(baseColor, Color.green, 0.5f);
+        }
+
+        // HOVER HIGHLIGHT: Eğer mouse üzerindeyse rengi %25 beyaza (parlaklığa) yaklaştır
+        if (isHovered && !isStunned)
+        {
+            baseColor = Color.Lerp(baseColor, Color.white, 0.25f);
+        }
+
+        spriteRenderer.color = baseColor;
+    }
+
+    private void OnMouseEnter()
+    {
+        isHovered = true;
+        UpdateVisuals();
+    }
+
+    private void OnMouseExit()
+    {
+        isHovered = false;
+        UpdateVisuals();
     }
 
     public void SnapToGrid()
@@ -135,28 +167,25 @@ public class PlayerUnit : MonoBehaviour
     {
         if (gridManager == null) yield break;
         
-        // State'i meşgul yap
         if (StateManager.Instance != null) StateManager.Instance.SetState(GameState.Busy);
 
         Vector2Int oldPos = currentGridPos;
         Vector3 targetWorldPos = gridManager.GetWorldPosition(targetPos.x, targetPos.y);
         
-        // DOTween jump movement
         transform.DOJump(targetWorldPos, jumpPower, 1, moveDuration).SetEase(Ease.OutQuad);
         
         yield return new WaitForSeconds(moveDuration);
 
         currentGridPos = targetPos;
 
-        // Her iki karedeki oyuncu dizilimini güncelle
         gridManager.UpdateOccupantPositions(oldPos);
         gridManager.UpdateOccupantPositions(currentGridPos);
 
-        // HAREKET BİTİNCE TOPU KONTROL ET
         CheckForBallPickup();
 
-        // State'i tekrar boşa çıkar
         if (StateManager.Instance != null) StateManager.Instance.SetState(GameState.Idle);
+
+        if (TurnManager.Instance != null) TurnManager.Instance.CheckAutoEndTurn();
     }
 
     private void CheckForBallPickup()
@@ -175,30 +204,34 @@ public class PlayerUnit : MonoBehaviour
         if (!hasBall || targetPlayer == null || targetPlayer == this) return;
         
         int distance = Mathf.Abs(targetPlayer.currentGridPos.x - currentGridPos.x) + Mathf.Abs(targetPlayer.currentGridPos.y - currentGridPos.y);
-        int roll = Random.Range(1, 7);
+        int roll = DiceManager.Instance.RollD6();
         int bonus = (unitData != null ? unitData.passingBonus : 0);
         int totalValue = roll + bonus;
         bool success = totalValue >= distance;
 
-        Color myColor = (team == TeamColor.Blue) ? Color.blue : Color.red;
+        Color myColor = TeamManager.Instance.GetTeamInfo(team).teamColor;
+        string icon = UIManager.Instance.GetDiceIcon(roll);
+        string colorHex = "#" + ColorUtility.ToHtmlStringRGB(myColor);
+        string note = $"<color={colorHex}>{icon}</color> + {bonus} = {totalValue} ({distance})";
 
-        // Polish: Zar dönsün sonra işlem yapılsın
         StartCoroutine(UIManager.Instance.AnimateDiceRoll(roll, myColor, null, null, "", () => {
-            if (UIManager.Instance != null)
-            {
-                string icon = UIManager.Instance.GetDiceIcon(roll);
-                string colorHex = "#" + ColorUtility.ToHtmlStringRGB(myColor);
-                UIManager.Instance.ShowCalculation($"Pass: <color={colorHex}>{icon}</color> + {bonus} = {totalValue} (Target: {distance})");
-            }
-
             hasBall = false;
             UpdateVisuals();
 
-            if (success) Ball.Instance.FlyTo(targetPlayer);
-            else Ball.Instance.FlyToDistance(currentGridPos, targetPlayer.transform.position - transform.position, totalValue);
+            if (success) 
+            {
+                Ball.Instance.FlyTo(targetPlayer);
+                AnnouncementManager.Instance.SendMiniAnnouncement("Great Pass!", myColor);
+            }
+            else 
+            {
+                Ball.Instance.FlyToDistance(currentGridPos, targetPlayer.transform.position - transform.position, totalValue);
+                AnnouncementManager.Instance.SendMiniAnnouncement("Pass Intercepted/Failed!", Color.gray);
+            }
             
             hasActed = true;
-        }));
+            if (TurnManager.Instance != null) TurnManager.Instance.CheckAutoEndTurn();
+        }, note));
     }
 
     public void Shoot(Hoop targetHoop)
@@ -206,75 +239,98 @@ public class PlayerUnit : MonoBehaviour
         if (!hasBall || targetHoop == null) return;
         
         int distance = Mathf.Abs(targetHoop.gridPos.x - currentGridPos.x) + Mathf.Abs(targetHoop.gridPos.y - currentGridPos.y);
-        int roll = Random.Range(1, 7);
+        int roll = DiceManager.Instance.RollD6();
         int bonus = (unitData != null ? unitData.shootingBonus : 0);
         int totalValue = roll + bonus;
         bool success = totalValue >= distance;
 
-        Color myColor = (team == TeamColor.Blue) ? Color.blue : Color.red;
+        Color myColor = TeamManager.Instance.GetTeamInfo(team).teamColor;
+        string icon = UIManager.Instance.GetDiceIcon(roll);
+        string colorHex = "#" + ColorUtility.ToHtmlStringRGB(myColor);
+        string note = $"<color={colorHex}>{icon}</color> + {bonus} = {totalValue} ({distance})";
 
         StartCoroutine(UIManager.Instance.AnimateDiceRoll(roll, myColor, null, null, "", () => {
-            if (UIManager.Instance != null)
-            {
-                string icon = UIManager.Instance.GetDiceIcon(roll);
-                string colorHex = "#" + ColorUtility.ToHtmlStringRGB(myColor);
-                UIManager.Instance.ShowCalculation($"Shoot: <color={colorHex}>{icon}</color> + {bonus} = {totalValue} (Target: {distance})");
-            }
-
             hasBall = false;
             UpdateVisuals();
 
-            if (success) Ball.Instance.FlyToPosition(targetHoop.transform.position, true, team);
-            else Ball.Instance.FlyToDistance(currentGridPos, new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), 0), 3);
+            if (success) 
+            {
+                Ball.Instance.FlyToPosition(targetHoop.transform.position, true, team);
+                AnnouncementManager.Instance.SendMiniAnnouncement("He takes the shot!", myColor);
+            }
+            else 
+            {
+                // FAILURE: Önce potaya gitsin sonra bouncelansın
+                Ball.Instance.FlyToHoopAndBounce(targetHoop.transform.position, currentGridPos);
+                AnnouncementManager.Instance.SendMiniAnnouncement("Off the rim!", Color.gray);
+            }
             
             hasActed = true;
-        }));
+            if (TurnManager.Instance != null) TurnManager.Instance.CheckAutoEndTurn();
+        }, note));
     }
 
     public void Attack(PlayerUnit targetPlayer)
     {
         if (hasBall) return;
         
-        int myRoll = Random.Range(1, 7);
+        int myRoll = DiceManager.Instance.RollD6();
         int myBonus = (unitData != null ? unitData.defenceBonus : 0);
         int myTotal = myRoll + myBonus;
         
-        int targetRoll = Random.Range(1, 7);
+        int targetRoll = DiceManager.Instance.RollD6();
         int targetBonus = (targetPlayer.unitData != null ? targetPlayer.unitData.defenceBonus : 0);
         int targetTotal = targetRoll + targetBonus;
 
-        // Zar sıralamasını sabitleyelim: Red her zaman solda, Blue her zaman sağda.
-        int rollRed = (team == TeamColor.Red) ? myRoll : targetRoll;
-        int rollBlue = (team == TeamColor.Blue) ? myRoll : targetRoll;
+        Color myColor = TeamManager.Instance.GetTeamInfo(team).teamColor;
+        Color targetColor = TeamManager.Instance.GetTeamInfo(targetPlayer.team).teamColor;
 
-        StartCoroutine(UIManager.Instance.AnimateDiceRoll(rollRed, Color.red, rollBlue, Color.blue, "/", () => {
-            if (UIManager.Instance != null)
-            {
-                string rIcon = UIManager.Instance.GetDiceIcon(rollRed);
-                string bIcon = UIManager.Instance.GetDiceIcon(rollBlue);
-                
-                UIManager.Instance.ShowCalculation($"<color=red>{rIcon}</color> / <color=blue>{bIcon}</color>");
-            }
+        int rollHeads = (team == TeamColor.Heads) ? myRoll : targetRoll;
+        int rollTails = (team == TeamColor.Tails) ? myRoll : targetRoll;
 
+        string hIcon = UIManager.Instance.GetDiceIcon(rollHeads);
+        string tIcon = UIManager.Instance.GetDiceIcon(rollTails);
+        string note = $"<color=white>{hIcon}</color> / <color=white>{tIcon}</color>";
+
+        StartCoroutine(UIManager.Instance.AnimateDiceRoll(rollHeads, TeamManager.Instance.headsInfo.teamColor, rollTails, TeamManager.Instance.tailsInfo.teamColor, "/", () => {
             StartCoroutine(MoveTo(targetPlayer.currentGridPos));
 
             if (myTotal > targetTotal)
             {
                 targetPlayer.Stun();
-                if (targetPlayer.hasBall) Ball.Instance.SetOwner(this);
+                if (targetPlayer.hasBall) 
+                {
+                    Ball.Instance.SetOwner(this);
+                    AnnouncementManager.Instance.SendAnnouncement("STEAL!", 1.0f, AnnouncementType.Combat, myColor);
+                }
+                else
+                {
+                    AnnouncementManager.Instance.SendAnnouncement("CRUSHED!", 1.0f, AnnouncementType.Combat, myColor);
+                }
             }
             else
             {
                 this.Stun();
-                if (this.hasBall) Ball.Instance.SetOwner(targetPlayer);
+                if (this.hasBall) 
+                {
+                    Ball.Instance.SetOwner(targetPlayer);
+                    AnnouncementManager.Instance.SendAnnouncement("STRIPPED!", 1.0f, AnnouncementType.Combat, targetColor);
+                }
+                else
+                {
+                    AnnouncementManager.Instance.SendAnnouncement("BLOCKED!", 1.0f, AnnouncementType.Combat, targetColor);
+                }
             }
+            
             hasActed = true;
-        }));
+            if (TurnManager.Instance != null) TurnManager.Instance.CheckAutoEndTurn();
+        }, note));
     }
 
     public void Stun()
     {
         isStunned = true;
+        stunTurnsLeft = 1; 
         UpdateVisuals();
     }
 }

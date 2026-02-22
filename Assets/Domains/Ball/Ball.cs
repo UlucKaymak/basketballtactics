@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using DG.Tweening;
+using UnityEngine.SceneManagement;
 
 public class Ball : MonoBehaviour
 {
@@ -74,20 +75,78 @@ public class Ball : MonoBehaviour
                 }
                 else
                 {
-                    SetOwner(null);
+                    CheckForCatch();
                 }
             });
     }
 
+    public void FlyToHoopAndBounce(Vector3 hoopPos, Vector2Int playerGridPos)
+    {
+        if (currentOwner != null)
+        {
+            currentOwner.hasBall = false;
+            currentOwner.UpdateVisuals();
+        }
+        currentOwner = null;
+
+        GridManager gm = Object.FindFirstObjectByType<GridManager>();
+        if (gm == null) return;
+
+        transform.DOJump(hoopPos, 1.5f, 1, passDuration)
+            .SetEase(Ease.OutQuad)
+            .OnComplete(() => {
+                Vector3 bounceDir = new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), 0).normalized;
+                int bounceDist = Random.Range(2, 4);
+                
+                Vector3 hoopWorldCenter = gm.GetWorldPosition(gm.GetGridPosition(hoopPos).x, gm.GetGridPosition(hoopPos).y);
+                float targetDist = (bounceDist * gm.tileSize);
+                Vector3 calculatedTargetPos = hoopWorldCenter + (bounceDir * targetDist);
+                Vector2Int targetGrid = gm.GetGridPosition(calculatedTargetPos);
+
+                if (!gm.IsInBounds(targetGrid))
+                {
+                    StartCoroutine(HandleOutOfBounds());
+                    return;
+                }
+
+                Vector3 snappedTargetPos = gm.GetWorldPosition(targetGrid.x, targetGrid.y);
+                gm.HighlightTile(targetGrid);
+                
+                transform.DOJump(snappedTargetPos, 0.8f, 1, 0.6f)
+                    .SetEase(Ease.OutBounce)
+                    .OnComplete(() => {
+                        CheckForCatch();
+                        gm.ClearHighlights();
+                    });
+            });
+    }
+
+    private IEnumerator HandleOutOfBounds()
+    {
+        if (StateManager.Instance != null) StateManager.Instance.SetState(GameState.Busy);
+        
+        Debug.Log("<color=red>BALL OUT OF BOUNDS!</color>");
+        
+        if (UIManager.Instance != null)
+        {
+            yield return StartCoroutine(AnnouncementManager.Instance.SendAnnouncementAndWait("OUT OF BOUNDS!", 1.5f, AnnouncementType.Alert, Color.red));
+            yield return StartCoroutine(AnnouncementManager.Instance.SendAnnouncementAndWait("RESTARTING MATCH...", 1.0f, AnnouncementType.Alert, Color.white));
+        }
+        else
+        {
+            yield return new WaitForSeconds(2.0f);
+        }
+
+        // Sahneyi baştan yükle
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
     private IEnumerator GoalSequence(TeamColor scorerTeam)
     {
-        // 1. Skoru Ekle (ScoreManager) - Bu olay, UI ve TurnManager'ı otomatik tetikler
         if (ScoreManager.Instance != null)
         {
             ScoreManager.Instance.AddScore(scorerTeam, 2); 
         }
-
-        SetOwner(null);
         yield return null;
     }
 
@@ -107,14 +166,18 @@ public class Ball : MonoBehaviour
         Vector3 flatDirection = direction.normalized;
 
         Vector3 startWorldPos = gm.GetWorldPosition(startGridPos.x, startGridPos.y);
-        float targetDist = (distance * gm.tileSize) - 0.1f;
+        float targetDist = (distance * gm.tileSize);
         Vector3 calculatedTargetPos = startWorldPos + (flatDirection * targetDist);
         Vector2Int targetGrid = gm.GetGridPosition(calculatedTargetPos);
 
-        Vector3 snappedTargetPos = gm.GetWorldPosition(targetGrid.x, targetGrid.y);
+        if (!gm.IsInBounds(targetGrid))
+        {
+            StartCoroutine(HandleOutOfBounds());
+            return;
+        }
 
+        Vector3 snappedTargetPos = gm.GetWorldPosition(targetGrid.x, targetGrid.y);
         gm.HighlightTile(targetGrid);
-        Debug.Log($"<color=aqua>Ball targeting Grid: {targetGrid}</color>");
 
         transform.DOJump(snappedTargetPos, 0.5f, 1, 0.6f)
             .SetEase(Ease.OutQuad)
@@ -122,11 +185,29 @@ public class Ball : MonoBehaviour
                 transform.DOJump(snappedTargetPos, 0.2f, 1, 0.3f)
                     .SetEase(Ease.OutQuad)
                     .OnComplete(() => {
-                        SetOwner(null);
+                        CheckForCatch();
                         gm.ClearHighlights(); 
-                        Debug.Log("Ball settled in grid center.");
                     });
             });
+    }
+
+    private void CheckForCatch()
+    {
+        GridManager gm = Object.FindFirstObjectByType<GridManager>();
+        if (gm == null) return;
+
+        Vector2Int currentGrid = gm.GetGridPosition(transform.position);
+        PlayerUnit playerAtTile = gm.GetPlayerAt(currentGrid);
+
+        if (playerAtTile != null)
+        {
+            Debug.Log($"<color=green>Ball caught by {playerAtTile.unitData.playerName} at {currentGrid}</color>");
+            SetOwner(playerAtTile);
+        }
+        else
+        {
+            SetOwner(null);
+        }
     }
 
     public void SetOwner(PlayerUnit player)
@@ -144,7 +225,6 @@ public class Ball : MonoBehaviour
         {
             player.hasBall = true;
             player.UpdateVisuals();
-            Debug.Log($"Ball is now held by {player.unitData?.playerName}");
         }
     }
 }

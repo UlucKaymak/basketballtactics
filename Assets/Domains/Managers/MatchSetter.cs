@@ -5,17 +5,13 @@ using NaughtyAttributes;
 
 public class MatchSetter : MonoBehaviour
 {
-    [Header("Team Rosters (Scriptable Objects)")]
-    public List<PlayerUnitData> blueRoster = new List<PlayerUnitData>();
-    public List<PlayerUnitData> redRoster = new List<PlayerUnitData>();
-
     [Header("Spawn Settings")]
     public GameObject playerPrefab;
-    public List<Vector2Int> blueSpawnPos = new List<Vector2Int>();
-    public List<Vector2Int> redSpawnPos = new List<Vector2Int>();
+    public List<Vector2Int> headsSpawnPos = new List<Vector2Int>();
+    public List<Vector2Int> tailsSpawnPos = new List<Vector2Int>();
 
     [Header("Initial Possession")]
-    public TeamColor startingBallTeam = TeamColor.Blue;
+    public TeamColor startingBallTeam = TeamColor.Heads;
 
     private void Start()
     {
@@ -30,58 +26,71 @@ public class MatchSetter : MonoBehaviour
             return;
         }
 
-        List<PlayerUnit> bluePlayers = new List<PlayerUnit>();
-        List<PlayerUnit> redPlayers = new List<PlayerUnit>();
+        List<PlayerUnit> headsUnits = new List<PlayerUnit>();
+        List<PlayerUnit> tailsUnits = new List<PlayerUnit>();
 
-        // 1. Takımları oluştur
-        SpawnTeam(blueRoster, TeamColor.Blue, blueSpawnPos, bluePlayers);
-        SpawnTeam(redRoster, TeamColor.Red, redSpawnPos, redPlayers);
+        // 1. Takımları TeamManager'daki roster'lardan çekip spawn et
+        SpawnTeam(TeamManager.Instance.headsInfo.roster, TeamColor.Heads, headsSpawnPos, headsUnits);
+        SpawnTeam(TeamManager.Instance.tailsInfo.roster, TeamColor.Tails, tailsSpawnPos, tailsUnits);
 
-        // 2. Takımları Kaydet (TeamManager)
-        TeamManager.Instance.RegisterTeams(redPlayers, bluePlayers);
+        // 2. Takımları Kaydet (Runtime listeler)
+        TeamManager.Instance.RegisterActiveUnits(headsUnits, tailsUnits);
 
         // 3. Hava Atışı (Jump Ball)
-        StartCoroutine(PlayJumpBallRoutine(redPlayers, bluePlayers));
+        StartCoroutine(PlayJumpBallRoutine(headsUnits, tailsUnits));
 
         Debug.Log("Match Setup initiated with Jump Ball!");
     }
 
-    private IEnumerator PlayJumpBallRoutine(List<PlayerUnit> red, List<PlayerUnit> blue)
+    private IEnumerator PlayJumpBallRoutine(List<PlayerUnit> heads, List<PlayerUnit> tails)
     {
-        int blueRoll = Random.Range(1, 7);
-        int redRoll = Random.Range(1, 7);
+        int headsRoll = DiceManager.Instance.RollD6();
+        int tailsRoll = DiceManager.Instance.RollD6();
 
-        while (blueRoll == redRoll)
+        while (headsRoll == tailsRoll)
         {
-            blueRoll = Random.Range(1, 7);
-            redRoll = Random.Range(1, 7);
+            headsRoll = DiceManager.Instance.RollD6();
+            tailsRoll = DiceManager.Instance.RollD6();
         }
 
-        startingBallTeam = (blueRoll > redRoll) ? TeamColor.Blue : TeamColor.Red;
+        startingBallTeam = (headsRoll > tailsRoll) ? TeamColor.Heads : TeamColor.Tails;
         
         if (UIManager.Instance != null)
         {
+            Color headsColor = TeamManager.Instance.headsInfo.teamColor;
+            Color tailsColor = TeamManager.Instance.tailsInfo.teamColor;
+
             yield return StartCoroutine(UIManager.Instance.AnimateDiceRoll(
-                redRoll, Color.red, blueRoll, Color.blue, "vs", null));
+                headsRoll, headsColor, tailsRoll, tailsColor, "vs", null));
             
-            string startMsg = (startingBallTeam == TeamColor.Blue) ? "BLUE TEAM STARTS!" : "RED TEAM STARTS!";
-            yield return StartCoroutine(UIManager.Instance.ShowAnnouncementRoutine(startMsg, 1.5f));
+            string startMsg = $"{TeamManager.Instance.GetTeamInfo(startingBallTeam).teamName} STARTS!";
+            yield return StartCoroutine(AnnouncementManager.Instance.SendAnnouncementAndWait(startMsg, 1.5f, AnnouncementType.Turn, TeamManager.Instance.GetTeamInfo(startingBallTeam).teamColor));
         }
 
-        // 4. Maçı Başlat (TurnManager) - Bu otomatik olarak UI'ı da güncelleyecek
         TurnManager.Instance.InitializeMatch(startingBallTeam);
 
-        AssignInitialBall(red, blue);
+        AssignInitialBall(heads, tails);
     }
 
     private void SpawnTeam(List<PlayerUnitData> roster, TeamColor team, List<Vector2Int> positions, List<PlayerUnit> listToFill)
     {
         for (int i = 0; i < roster.Count; i++)
         {
-            Vector2Int pos = (i < positions.Count) ? positions[i] : new Vector2Int(team == TeamColor.Red ? 6 : 0, i);
+            Vector2Int pos = (i < positions.Count) ? positions[i] : new Vector2Int(team == TeamColor.Heads ? 0 : 6, i);
             GameObject go = Instantiate(playerPrefab);
             go.name = roster[i].playerName + $" ({team})";
-            PlayerUnit pu = go.GetComponent<PlayerUnit>();
+            
+            PlayerUnit existing = go.GetComponent<PlayerUnit>();
+            if (existing != null) DestroyImmediate(existing);
+
+            PlayerUnit pu = null;
+            switch (roster[i].playerType)
+            {
+                case PlayerType.Offensive: pu = go.AddComponent<OffensivePlayerUnit>(); break;
+                case PlayerType.Defensive: pu = go.AddComponent<DefensivePlayerUnit>(); break;
+                case PlayerType.Support:   pu = go.AddComponent<SupportPlayerUnit>(); break;
+                default:                  pu = go.AddComponent<PlayerUnit>(); break;
+            }
             
             if (pu != null)
             {
@@ -91,11 +100,11 @@ public class MatchSetter : MonoBehaviour
         }
     }
 
-    private void AssignInitialBall(List<PlayerUnit> red, List<PlayerUnit> blue)
+    private void AssignInitialBall(List<PlayerUnit> heads, List<PlayerUnit> tails)
     {
         if (Ball.Instance == null) return;
 
-        List<PlayerUnit> team = (startingBallTeam == TeamColor.Red) ? red : blue;
+        List<PlayerUnit> team = (startingBallTeam == TeamColor.Heads) ? heads : tails;
         if (team.Count > 0)
         {
             Ball.Instance.SetOwner(team[0]);

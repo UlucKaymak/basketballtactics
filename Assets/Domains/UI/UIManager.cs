@@ -35,7 +35,6 @@ public class UIManager : MonoBehaviour
 
     private void OnEnable()
     {
-        // Event Abonelikleri (Subscribe)
         if (ScoreManager.Instance != null)
         {
             ScoreManager.OnScoreChanged += HandleScoreChanged;
@@ -50,7 +49,6 @@ public class UIManager : MonoBehaviour
 
     private void OnDisable()
     {
-        // Abonelik İptali (Unsubscribe) - Memory Leak Önlemek İçin
         if (ScoreManager.Instance != null)
         {
             ScoreManager.OnScoreChanged -= HandleScoreChanged;
@@ -63,20 +61,24 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    private void HandleScoreChanged(int red, int blue)
+    private void HandleScoreChanged(int heads, int tails)
     {
-        SendMiniAnnouncement($"Blue: {blue} - Red: {red}", Color.white);
+        TeamInfo hInfo = TeamManager.Instance.headsInfo;
+        TeamInfo tInfo = TeamManager.Instance.tailsInfo;
+        AnnouncementManager.Instance.SendMiniAnnouncement($"{hInfo.teamName}: {heads} - {tInfo.teamName}: {tails}", Color.white);
     }
 
     private void HandleGoalScored(TeamColor team, int points)
     {
-        SendAnnouncement($"{team} Team Scored! (+{points})", 2.0f);
+        TeamInfo info = TeamManager.Instance.GetTeamInfo(team);
+        AnnouncementManager.Instance.SendAnnouncement($"{info.teamName} Scored! (+{points})", 2.0f, AnnouncementType.Goal, info.teamColor);
     }
 
     private void HandleTurnChanged(TeamColor activeTeam, int turn)
     {
-        SendAnnouncement($"{activeTeam} Team's Turn!", 1.5f);
-        SendMiniAnnouncement($"Turn {turn}: {activeTeam}", (activeTeam == TeamColor.Red) ? Color.red : Color.cyan);
+        TeamInfo info = TeamManager.Instance.GetTeamInfo(activeTeam);
+        AnnouncementManager.Instance.SendAnnouncement($"{info.teamName}'s Turn!", 1.5f, AnnouncementType.Turn, info.teamColor);
+        AnnouncementManager.Instance.SendMiniAnnouncement($"Turn {turn}: {info.teamName}", info.teamColor);
     }
 
     private void Update()
@@ -94,21 +96,20 @@ public class UIManager : MonoBehaviour
         {
             announcementText.text = "";
             announcementText.alpha = 0;
-            announcementText.raycastTarget = false; // Tıklamayı engellemesin
+            announcementText.raycastTarget = false; 
         }
 
         if (miniAnnouncementText != null)
         {
             miniAnnouncementText.text = "";
             miniAnnouncementText.alpha = 0;
-            miniAnnouncementText.raycastTarget = false; // Tıklamayı engellemesin
+            miniAnnouncementText.raycastTarget = false; 
         }
 
         if (calculationText != null)
         {
             calculationText.text = "";
             calculationText.alpha = 0;
-            // DİKKAT: Sadece tıklama beklerken açılmalı. Başlangıçta kapalı olmalı!
             calculationText.raycastTarget = false; 
         }
         
@@ -118,29 +119,6 @@ public class UIManager : MonoBehaviour
             if (actionPanelCG == null) actionPanelCG = actionPanel.GetComponent<CanvasGroup>();
         }
     }
-
-    #region Quick Access Methods
-
-    public void SendAnnouncement(string message, float duration = 1.5f)
-    {
-        StartCoroutine(ShowAnnouncementRoutine(message, duration));
-    }
-
-    public void SendMiniAnnouncement(string message, Color? color = null)
-    {
-        if (miniAnnouncementText == null) return;
-        miniAnnouncementText.text = message;
-        miniAnnouncementText.color = color ?? Color.white;
-        miniAnnouncementText.alpha = 1f;
-        miniAnnouncementText.transform.DOPunchScale(Vector3.one * 0.05f, 0.2f);
-    }
-
-    public void SendCalculation(string message)
-    {
-        ShowCalculation(message);
-    }
-
-    #endregion
 
     public void ShowActionPanel(PlayerUnit player)
     {
@@ -172,53 +150,25 @@ public class UIManager : MonoBehaviour
         if (actionPanelCG != null) actionPanelCG.DOFade(0, 0.15f);
     }
 
-    public IEnumerator ShowAnnouncementRoutine(string message, float duration = 1.0f)
+    public void SendAnnouncement(string message, float duration = 1.5f)
     {
-        if (announcementText == null) yield break;
-        announcementText.text = message;
-        announcementText.alpha = 0;
-        announcementText.transform.localScale = Vector3.one * 0.5f;
-        
-        Sequence seq = DOTween.Sequence();
-        seq.Append(announcementText.DOFade(1f, 0.3f));
-        seq.Join(announcementText.transform.DOScale(1.2f, 0.3f).SetEase(Ease.OutBack));
-        seq.AppendInterval(duration);
-        seq.Append(announcementText.DOFade(0f, 0.3f));
-        seq.Join(announcementText.transform.DOScale(0.8f, 0.3f));
-
-        yield return seq.WaitForCompletion();
+        AnnouncementManager.Instance.SendAnnouncement(message, duration);
     }
 
-    public void ShowCalculation(string text)
+    public void SendMiniAnnouncement(string message, Color? color = null)
     {
-        StartCoroutine(ShowCalculationRoutine(text));
-    }
-
-    public IEnumerator ShowCalculationRoutine(string text)
-    {
-        if (calculationText != null)
-        {
-            calculationText.text = text;
-            calculationText.alpha = 1f;
-            calculationText.raycastTarget = true; // Sadece gösterirken tıklama beklesin
-            calculationText.transform.localScale = Vector3.one;
-
-            calculationText.transform.DOPunchPosition(Vector3.up * 0.1f, 0.2f);
-            isWaitingForClick = true;
-
-            if (StateManager.Instance != null) StateManager.Instance.SetState(GameState.Resolution);
-
-            while (isWaitingForClick) yield return null;
-
-            ClearCalculationUI();
-        }
+        AnnouncementManager.Instance.SendMiniAnnouncement(message, color);
     }
 
     public void OnCalculationClick()
     {
         if (!isWaitingForClick) return;
+        ForceClearCalculation();
+    }
+
+    public void ForceClearCalculation()
+    {
         isWaitingForClick = false;
-        
         ClearCalculationUI();
 
         if (StateManager.Instance != null && StateManager.Instance.IsResolution())
@@ -233,7 +183,7 @@ public class UIManager : MonoBehaviour
         {
             calculationText.DOFade(0f, 0.2f);
             calculationText.text = "";
-            calculationText.raycastTarget = false; // Temizlendiğinde tıklama engelini kaldır
+            calculationText.raycastTarget = false; 
         }
     }
 
@@ -242,7 +192,7 @@ public class UIManager : MonoBehaviour
         return roll.ToString();
     }
 
-    public IEnumerator AnimateDiceRoll(int roll1, Color color1, int? roll2 = null, Color? color2 = null, string label = "/", System.Action onComplete = null)
+    public IEnumerator AnimateDiceRoll(int roll1, Color color1, int? roll2 = null, Color? color2 = null, string label = "/", System.Action onComplete = null, string finalNote = "")
     {
         if (calculationText == null)
         {
@@ -264,12 +214,12 @@ public class UIManager : MonoBehaviour
 
         while (elapsed < duration)
         {
-            int temp1 = Random.Range(1, 7);
+            int temp1 = DiceManager.Instance.RollD6();
             string diceText = $"<color={c1Hex}>{GetDiceIcon(temp1)}</color>";
 
             if (roll2.HasValue)
             {
-                int temp2 = Random.Range(1, 7);
+                int temp2 = DiceManager.Instance.RollD6();
                 diceText = $"<color={c1Hex}>{GetDiceIcon(temp1)}</color> {label} <color={c2Hex}>{GetDiceIcon(temp2)}</color>";
             }
 
@@ -286,14 +236,21 @@ public class UIManager : MonoBehaviour
             finalDiceText = $"<color={c1Hex}>{GetDiceIcon(roll1)}</color> {label} <color={c2Hex}>{GetDiceIcon(roll2.Value)}</color>";
         }
 
-        calculationText.text = finalDiceText;
+        if (!string.IsNullOrEmpty(finalNote))
+        {
+            calculationText.text = finalNote;
+        }
+        else
+        {
+            calculationText.text = finalDiceText;
+        }
         
         calculationText.transform.DOPunchScale(Vector3.one * 0.2f, 0.4f, 5, 0.5f);
         
         yield return new WaitForSeconds(0.4f);
         
         isWaitingForClick = true; 
-        calculationText.raycastTarget = true; // Tıklama beklerken aktif et
+        calculationText.raycastTarget = true; 
         if (StateManager.Instance != null) StateManager.Instance.SetState(GameState.Resolution);
 
         while (isWaitingForClick) yield return null;
