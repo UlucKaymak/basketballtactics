@@ -47,20 +47,27 @@ public class InputController : MonoBehaviour
         }
 
         // 3. UI ENGELİ: Eğer mouse bir UI elemanı üzerindeyse (buton vs) dünya tıklamasını engelle
+        // DİKKAT: Bu kontrol dünya tıklamalarını (oyuncu seçme vb.) engeller, 
+        // ama butonların kendi OnClick olaylarının çalışmasına izin verir.
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
         {
-            if (Mouse.current.leftButton.wasPressedThisFrame)
-            {
-                PointerEventData eventData = new PointerEventData(EventSystem.current);
-                eventData.position = Mouse.current.position.ReadValue();
-                List<RaycastResult> results = new List<RaycastResult>();
-                EventSystem.current.RaycastAll(eventData, results);
-                if (results.Count > 0)
-                {
-                    Debug.Log($"<color=red>[Input] Blocked by UI: {results[0].gameObject.name}</color>");
-                }
-            }
+            // Mouse bir buton üzerindeyken dünya tıklaması (Raycast) yapma, çık.
             return;
+        }
+
+        // 4. KLAVYE KISAYOLLARI (Sadece bir oyuncu seçiliyken)
+        if (selectedPlayer != null && StateManager.Instance != null && StateManager.Instance.IsIdle())
+        {
+            if (Keyboard.current.digit1Key.wasPressedThisFrame && UIManager.Instance.moveBtn.interactable)
+                OnMoveBtn();
+            else if (Keyboard.current.digit2Key.wasPressedThisFrame && UIManager.Instance.passBtn.interactable)
+                OnPassBtn();
+            else if (Keyboard.current.digit3Key.wasPressedThisFrame && UIManager.Instance.shootBtn.interactable)
+                OnShootBtn();
+            else if (Keyboard.current.digit4Key.wasPressedThisFrame && UIManager.Instance.waitBtn.interactable)
+                OnWaitBtn();
+            else if (Keyboard.current.escapeKey.wasPressedThisFrame)
+                DeselectPlayer();
         }
 
         Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
@@ -202,7 +209,11 @@ public class InputController : MonoBehaviour
 
     public void OnWaitBtn() 
     { 
-        if (selectedPlayer != null) selectedPlayer.hasActed = true;
+        if (selectedPlayer != null) 
+        {
+            selectedPlayer.hasActed = true;
+            if (TurnManager.Instance != null) TurnManager.Instance.CheckAutoEndTurn();
+        }
         DeselectPlayer(); 
     }
 

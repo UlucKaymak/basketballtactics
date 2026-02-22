@@ -9,10 +9,9 @@ public class TurnManager : MonoBehaviour
     public static TurnManager Instance;
 
     [Header("Status")]
-    [ReadOnly] public TeamColor activeTeam = TeamColor.Blue;
+    [ReadOnly] public TeamColor activeTeam = TeamColor.Heads;
     [ReadOnly] public int currentTurn = 1;
 
-    // Tur değiştiğinde tetiklenecek olay: (Yeni Sıra Kimde, Kaçıncı Tur)
     public static event Action<TeamColor, int> OnTurnChanged;
 
     private void Awake()
@@ -23,7 +22,6 @@ public class TurnManager : MonoBehaviour
 
     private void Start()
     {
-        // Gol olduğunda sırayı golü atan takıma verelim
         ScoreManager.OnGoalScored += HandleGoalScored;
     }
 
@@ -47,35 +45,41 @@ public class TurnManager : MonoBehaviour
     [Button("End Turn")]
     public void EndTurn()
     {
+        if (StateManager.Instance != null && StateManager.Instance.IsBusy()) return;
         StartCoroutine(EndTurnRoutine());
     }
 
     private IEnumerator EndTurnRoutine()
     {
-        // 1. Sırayı Değiştir
-        activeTeam = (activeTeam == TeamColor.Blue) ? TeamColor.Red : TeamColor.Blue;
-        if (activeTeam == TeamColor.Blue) currentTurn++;
+        activeTeam = (activeTeam == TeamColor.Heads) ? TeamColor.Tails : TeamColor.Heads;
+        if (activeTeam == TeamColor.Heads) currentTurn++;
 
         Debug.Log($"<color=yellow>[TurnManager] Turn Ended! Next: {activeTeam} (Turn {currentTurn})</color>");
         
         if (StateManager.Instance != null) StateManager.Instance.SetState(GameState.Busy);
 
-        // 2. Event Ateşle (UI dinleyebilir)
         OnTurnChanged?.Invoke(activeTeam, currentTurn);
 
-        // 3. Stun/Action durumlarını sıfırla (TeamManager üzerinden)
         if (TeamManager.Instance != null)
         {
             var activePlayers = TeamManager.Instance.GetTeam(activeTeam);
             foreach (var p in activePlayers)
             {
-                p.isStunned = false; 
+                if (p.isStunned)
+                {
+                    p.stunTurnsLeft--;
+                    if (p.stunTurnsLeft < 0) 
+                    {
+                        p.isStunned = false;
+                        p.stunTurnsLeft = 0;
+                    }
+                }
+                
                 p.hasActed = false; 
                 p.UpdateVisuals(); 
             }
         }
 
-        // Kısa bekleme süresi (UI animasyonu için)
         yield return new WaitForSeconds(1.0f);
 
         if (StateManager.Instance != null) StateManager.Instance.SetState(GameState.Idle);
@@ -95,26 +99,31 @@ public class TurnManager : MonoBehaviour
     {
         if (StateManager.Instance != null) StateManager.Instance.SetState(GameState.Busy);
         
-        // 1. Takımları Resetle (TeamManager üzerinden)
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.ForceClearCalculation();
+        }
+
         if (TeamManager.Instance != null)
         {
             TeamManager.Instance.ResetAllPlayers(scorerTeam);
         }
 
-        activeTeam = scorerTeam;
-        Debug.Log($"<color=gold>[TurnManager] Goal Reset Complete. Possession: {scorerTeam}</color>");
-
-        // UI Güncelle (Event üzerinden)
-        OnTurnChanged?.Invoke(activeTeam, currentTurn);
+        activeTeam = (scorerTeam == TeamColor.Heads) ? TeamColor.Tails : TeamColor.Heads;
         
+        if (activeTeam == TeamColor.Heads) currentTurn++;
+
+        Debug.Log($"<color=gold>[TurnManager] Goal Reset Complete. Next Possession: {activeTeam}</color>");
+
         yield return new WaitForSeconds(0.5f);
 
         if (StateManager.Instance != null) StateManager.Instance.SetState(GameState.Idle);
+
+        OnTurnChanged?.Invoke(activeTeam, currentTurn);
     }
 
     public void CheckAutoEndTurn()
     {
-        if (StateManager.Instance != null && !StateManager.Instance.IsIdle()) return;
         if (TeamManager.Instance == null) return;
 
         List<PlayerUnit> currentActivePlayers = TeamManager.Instance.GetTeam(activeTeam);
@@ -131,7 +140,7 @@ public class TurnManager : MonoBehaviour
 
         if (allActed)
         {
-            Debug.Log($"[TurnManager] Auto-End Turn Triggered for {activeTeam}");
+            Debug.Log($"<color=yellow>[TurnManager] Auto-End Turn Triggered for {activeTeam}</color>");
             EndTurn();
         }
     }
