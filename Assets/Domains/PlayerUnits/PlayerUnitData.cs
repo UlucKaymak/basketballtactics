@@ -1,10 +1,13 @@
 using UnityEngine;
 
+public enum PlayerType { Offensive, Defensive, Support }
+
 [CreateAssetMenu(fileName = "New Player Unit", menuName = "BasketballTactics/Player Unit")]
 public class PlayerUnitData : ScriptableObject
 {
     [Header("Basic Info")]
     public string playerName;
+    public PlayerType playerType;
 
     [Header("Stats")]
     public int speed = 3;
@@ -13,7 +16,5 @@ public class PlayerUnitData : ScriptableObject
     public int defenceBonus = 0;
 
     [Header("Visuals")]
-    public Sprite blueTeamSprite;
-    public Sprite redTeamSprite;
-    // public Sprite playerIcon;
+    public Sprite baseSprite;
 }

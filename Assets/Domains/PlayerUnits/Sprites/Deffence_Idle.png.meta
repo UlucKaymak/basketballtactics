@@ -1,31 +1,31 @@
 fileFormatVersion: 2
-guid: 3e8759b4126804c839fc296588685cbb
+guid: a1b54256730284274a57a98fc6e2d7d7
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -4274121677905948360
-    second: Pawn_Idle 1_0
+      213: -1751153183863567367
+    second: Deffence_Idle_0
   - first:
-      213: 2396478919623283463
-    second: Pawn_Idle 1_1
+      213: -8745014232455864819
+    second: Deffence_Idle_1
   - first:
-      213: -4876485402569306003
-    second: Pawn_Idle 1_2
+      213: 4827576930481014624
+    second: Deffence_Idle_2
   - first:
-      213: 4780564081192353585
-    second: Pawn_Idle 1_3
+      213: 1886461133798640457
+    second: Deffence_Idle_3
   - first:
-      213: -4531623586959649393
-    second: Pawn_Idle 1_4
+      213: 4929655865886690828
+    second: Deffence_Idle_4
   - first:
-      213: 3883246940479823346
-    second: Pawn_Idle 1_5
+      213: 3626449238004095431
+    second: Deffence_Idle_5
   - first:
-      213: -5913338590363867329
-    second: Pawn_Idle 1_6
+      213: -7873372088304812713
+    second: Deffence_Idle_6
   - first:
-      213: -7138948900620903773
-    second: Pawn_Idle 1_7
+      213: -4259791307873973688
+    second: Deffence_Idle_7
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -121,177 +121,177 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Pawn_Idle-Blue_0
+      name: Deffence_Idle_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 192
-        height: 192
+        x: 61
+        y: 54
+        width: 81
+        height: 91
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: 0
+      tessellationDetail: -1
       bones: []
-      spriteID: b970b579a0bc444c79634e09f40905f7
-      internalID: -1598845503
+      spriteID: 9fb84801577a2b7e0800000000000000
+      internalID: -1751153183863567367
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Pawn_Idle-Blue_1
+      name: Deffence_Idle_1
       rect:
         serializedVersion: 2
-        x: 192
-        y: 0
-        width: 192
-        height: 192
+        x: 253
+        y: 54
+        width: 81
+        height: 91
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: 0
+      tessellationDetail: -1
       bones: []
-      spriteID: 6c374f03b20bd4d9185a27f578c09756
-      internalID: -1231381017
+      spriteID: d0e9bbe73e773a680800000000000000
+      internalID: -8745014232455864819
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Pawn_Idle-Blue_2
+      name: Deffence_Idle_2
       rect:
         serializedVersion: 2
-        x: 384
-        y: 0
-        width: 192
-        height: 192
+        x: 445
+        y: 54
+        width: 81
+        height: 90
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: 0
+      tessellationDetail: -1
       bones: []
-      spriteID: 9a9188cfa81b448e481809ca1373936e
-      internalID: 1447432090
+      spriteID: 067013304affef240800000000000000
+      internalID: 4827576930481014624
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Pawn_Idle-Blue_3
+      name: Deffence_Idle_3
       rect:
         serializedVersion: 2
-        x: 576
-        y: 0
-        width: 192
-        height: 192
+        x: 635
+        y: 54
+        width: 83
+        height: 88
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: 0
+      tessellationDetail: -1
       bones: []
-      spriteID: 1d6a0dac326bd4769a273071913678d9
-      internalID: -621745958
+      spriteID: 94b06a2086e0e2a10800000000000000
+      internalID: 1886461133798640457
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Pawn_Idle-Blue_4
+      name: Deffence_Idle_4
       rect:
         serializedVersion: 2
-        x: 768
-        y: 0
-        width: 192
-        height: 192
+        x: 826
+        y: 54
+        width: 85
+        height: 87
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: 0
+      tessellationDetail: -1
       bones: []
-      spriteID: b7ce8f954879649b6bf0e045b946a3c8
-      internalID: 1147438
+      spriteID: c0ec81f34e7a96440800000000000000
+      internalID: 4929655865886690828
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Pawn_Idle-Blue_5
+      name: Deffence_Idle_5
       rect:
         serializedVersion: 2
-        x: 960
-        y: 0
-        width: 192
-        height: 192
+        x: 1019
+        y: 54
+        width: 85
+        height: 87
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: 0
+      tessellationDetail: -1
       bones: []
-      spriteID: 72e3e44dd3ff04aa38cbf0e72f83aa77
-      internalID: -390454821
+      spriteID: 7c958334e5cb35230800000000000000
+      internalID: 3626449238004095431
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Pawn_Idle-Blue_6
+      name: Deffence_Idle_6
       rect:
         serializedVersion: 2
-        x: 1152
-        y: 0
-        width: 192
-        height: 192
+        x: 1211
+        y: 54
+        width: 84
+        height: 89
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: 0
+      tessellationDetail: -1
       bones: []
-      spriteID: c15b7415b93a9446882b8491f8635a6e
-      internalID: -1732264536
+      spriteID: 75dbd14fcc92cb290800000000000000
+      internalID: -7873372088304812713
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Pawn_Idle-Blue_7
+      name: Deffence_Idle_7
       rect:
         serializedVersion: 2
-        x: 1344
-        y: 0
-        width: 192
-        height: 192
+        x: 1404
+        y: 54
+        width: 82
+        height: 90
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: 0
+      tessellationDetail: -1
       bones: []
-      spriteID: 98953a22d07844fcb85176d67e822f1a
-      internalID: 262790160
+      spriteID: 84a00e4ff5e22e4c0800000000000000
+      internalID: -4259791307873973688
       vertices: []
       indices: 
       edges: []
@@ -300,7 +300,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: e4258542071044b2f8773581bb0f6ac9
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -308,18 +308,16 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries:
-      - key: SpriteEditor.SliceSettings
-        value: '{"sliceOnImport":false,"gridCellCount":{"x":8.0,"y":1.0},"gridSpriteSize":{"x":192.0,"y":192.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
+      entries: []
     nameFileIdTable:
-      Pawn_Idle-Blue_0: -1598845503
-      Pawn_Idle-Blue_1: -1231381017
-      Pawn_Idle-Blue_2: 1447432090
-      Pawn_Idle-Blue_3: -621745958
-      Pawn_Idle-Blue_4: 1147438
-      Pawn_Idle-Blue_5: -390454821
-      Pawn_Idle-Blue_6: -1732264536
-      Pawn_Idle-Blue_7: 262790160
+      Deffence_Idle_0: -1751153183863567367
+      Deffence_Idle_1: -8745014232455864819
+      Deffence_Idle_2: 4827576930481014624
+      Deffence_Idle_3: 1886461133798640457
+      Deffence_Idle_4: 4929655865886690828
+      Deffence_Idle_5: 3626449238004095431
+      Deffence_Idle_6: -7873372088304812713
+      Deffence_Idle_7: -4259791307873973688
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

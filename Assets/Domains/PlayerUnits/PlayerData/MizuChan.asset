@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: MizuChan
   m_EditorClassIdentifier: Assembly-CSharp::PlayerUnitData
   playerName: Mizu Chan
+  playerType: 2
   speed: 3
   shootingBonus: 3
   passingBonus: 2
   defenceBonus: 1
-  blueTeamSprite: {fileID: -1598845503, guid: 3e8759b4126804c839fc296588685cbb, type: 3}
-  redTeamSprite: {fileID: 233671910, guid: 7d713365ec43741aa8ad16e300e15570, type: 3}
+  baseSprite: {fileID: 6985750868354089332, guid: bdee7489587504ec59f959d27c94c708, type: 3}

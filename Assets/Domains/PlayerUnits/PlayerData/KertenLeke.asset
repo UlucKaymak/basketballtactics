@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: KertenLeke
   m_EditorClassIdentifier: Assembly-CSharp::PlayerUnitData
   playerName: Kerten Leke
+  playerType: 1
   speed: 3
   shootingBonus: 3
   passingBonus: 2
   defenceBonus: 1
-  blueTeamSprite: {fileID: -1598845503, guid: 3e8759b4126804c839fc296588685cbb, type: 3}
-  redTeamSprite: {fileID: 233671910, guid: 7d713365ec43741aa8ad16e300e15570, type: 3}
+  baseSprite: {fileID: -1751153183863567367, guid: a1b54256730284274a57a98fc6e2d7d7, type: 3}
