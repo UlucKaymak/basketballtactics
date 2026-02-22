@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using DG.Tweening;
 
 public class Ball : MonoBehaviour
@@ -16,17 +17,14 @@ public class Ball : MonoBehaviour
 
     private void Update()
     {
-        // Follow the owner if held
         if (currentOwner != null)
         {
-            // Position slightly offset to look like they are holding it
             transform.position = currentOwner.transform.position + new Vector3(0, 0.5f, 0);
         }
     }
 
     public void FlyTo(PlayerUnit targetPlayer)
     {
-        // Önceki sahibinden tamamen ayır
         if (currentOwner != null)
         {
             currentOwner.hasBall = false;
@@ -39,7 +37,6 @@ public class Ball : MonoBehaviour
 
         if (gm != null)
         {
-            // Oyuncunun bulunduğu karesinin tam merkezine atıyoruz
             finalPos = gm.GetWorldPosition(targetPlayer.currentGridPos.x, targetPlayer.currentGridPos.y);
         }
 
@@ -50,9 +47,6 @@ public class Ball : MonoBehaviour
             });
     }
 
-    /// <summary>
-    /// Topun belli bir pozisyona (Pota gibi) uçması
-    /// </summary>
     public void FlyToPosition(Vector3 targetPos, bool isGoal, TeamColor scorerTeam)
     {
         if (currentOwner != null)
@@ -67,7 +61,6 @@ public class Ball : MonoBehaviour
 
         if (gm != null)
         {
-            // Potanın olduğu karesinin tam merkezine atıyoruz
             Vector2Int hoopGrid = gm.GetGridPosition(targetPos);
             finalPos = gm.GetWorldPosition(hoopGrid.x, hoopGrid.y);
         }
@@ -77,28 +70,29 @@ public class Ball : MonoBehaviour
             .OnComplete(() => {
                 if (isGoal)
                 {
-                    Debug.Log("<color=orange>GOAL EFFECT!</color>");
-                    if (UIManager.Instance != null)
-                    {
-                        UIManager.Instance.AddScore(scorerTeam, 2); 
-                    }
-                    
-                    // Maçı resetlemesi için TurnManager'ı çağır
-                    if (TurnManager.Instance != null)
-                    {
-                        TurnManager.Instance.OnGoalScored(scorerTeam);
-                    }
+                    StartCoroutine(GoalSequence(scorerTeam));
                 }
-                SetOwner(null);
+                else
+                {
+                    SetOwner(null);
+                }
             });
     }
 
-    /// <summary>
-    /// Pas başarısız olduğunda topun zar kadar mesafeye zıplayarak (bounce) düşmesi
-    /// </summary>
+    private IEnumerator GoalSequence(TeamColor scorerTeam)
+    {
+        // 1. Skoru Ekle (ScoreManager) - Bu olay, UI ve TurnManager'ı otomatik tetikler
+        if (ScoreManager.Instance != null)
+        {
+            ScoreManager.Instance.AddScore(scorerTeam, 2); 
+        }
+
+        SetOwner(null);
+        yield return null;
+    }
+
     public void FlyToDistance(Vector2Int startGridPos, Vector3 direction, int distance)
     {
-        // Önceki sahibinden tamamen ayır
         if (currentOwner != null)
         {
             currentOwner.hasBall = false;
@@ -112,20 +106,16 @@ public class Ball : MonoBehaviour
         direction.z = 0; 
         Vector3 flatDirection = direction.normalized;
 
-        // Hedeflenen Tile'ı hesapla
         Vector3 startWorldPos = gm.GetWorldPosition(startGridPos.x, startGridPos.y);
         float targetDist = (distance * gm.tileSize) - 0.1f;
         Vector3 calculatedTargetPos = startWorldPos + (flatDirection * targetDist);
         Vector2Int targetGrid = gm.GetGridPosition(calculatedTargetPos);
 
-        // Grid'in TAM merkezini al
         Vector3 snappedTargetPos = gm.GetWorldPosition(targetGrid.x, targetGrid.y);
 
-        // Maviyle highlightla
         gm.HighlightTile(targetGrid);
         Debug.Log($"<color=aqua>Ball targeting Grid: {targetGrid}</color>");
 
-        // Bounce Efekti (Snapped pozisyona git)
         transform.DOJump(snappedTargetPos, 0.5f, 1, 0.6f)
             .SetEase(Ease.OutQuad)
             .OnComplete(() => {
@@ -133,7 +123,7 @@ public class Ball : MonoBehaviour
                     .SetEase(Ease.OutQuad)
                     .OnComplete(() => {
                         SetOwner(null);
-                        gm.ClearHighlights(); // İşlem bitince temizle
+                        gm.ClearHighlights(); 
                         Debug.Log("Ball settled in grid center.");
                     });
             });
@@ -146,14 +136,14 @@ public class Ball : MonoBehaviour
         if (previousOwner != null)
         {
             previousOwner.hasBall = false;
-            previousOwner.UpdateVisuals(); // Görseli güncelle (Kırmızı)
+            previousOwner.UpdateVisuals();
         }
         
         currentOwner = player;
         if (player != null)
         {
             player.hasBall = true;
-            player.UpdateVisuals(); // Görseli güncelle (Yeşil)
+            player.UpdateVisuals();
             Debug.Log($"Ball is now held by {player.unitData?.playerName}");
         }
     }

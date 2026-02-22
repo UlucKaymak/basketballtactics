@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using System.Collections.Generic;
+using DG.Tweening;
 
 public class GridManager : MonoBehaviour
 {
@@ -125,6 +126,37 @@ public class GridManager : MonoBehaviour
             if (p.currentGridPos == gridPos) return p;
         }
         return null;
+    }
+
+    /// <summary>
+    /// Bir karedeki tüm oyuncuları bulur ve yan yana durmaları için pozisyonlarını günceller.
+    /// </summary>
+    public void UpdateOccupantPositions(Vector2Int gridPos)
+    {
+        List<PlayerUnit> occupants = new List<PlayerUnit>();
+        PlayerUnit[] allPlayers = Object.FindObjectsByType<PlayerUnit>(FindObjectsSortMode.None);
+        
+        foreach (var p in allPlayers)
+        {
+            if (p.currentGridPos == gridPos) occupants.Add(p);
+        }
+
+        if (occupants.Count == 0) return;
+
+        Vector3 centerWorldPos = GetWorldPosition(gridPos.x, gridPos.y);
+
+        if (occupants.Count == 1)
+        {
+            // Sadece bir kişi varsa tam merkeze koy
+            occupants[0].transform.DOMove(centerWorldPos, 0.2f);
+        }
+        else if (occupants.Count == 2)
+        {
+            // İki kişi varsa hafif sağa ve sola kaydır
+            occupants[0].transform.DOMove(centerWorldPos + new Vector3(-0.25f, 0, 0), 0.2f);
+            occupants[1].transform.DOMove(centerWorldPos + new Vector3(0.25f, 0, 0), 0.2f);
+        }
+        // Daha fazla kişi için de benzer mantık eklenebilir
     }
 
     public bool IsTileOccupied(Vector2Int gridPos)

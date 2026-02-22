@@ -20,8 +20,46 @@ public class InputController : MonoBehaviour
     {
         if (Mouse.current == null) return;
 
+        // --- DEBUG: Sadece sol tıklandığında durumu raporla ---
+        if (Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            string stateStr = StateManager.Instance != null ? StateManager.Instance.CurrentState.ToString() : "NULL";
+            bool overUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            Debug.Log($"<color=white>[Input Debug] Click Detected! State: {stateStr}, OverUI: {overUI}</color>");
+        }
+
+        // 1. RESOLUTION DURUMU: Ekrana tıklandığında zarları temizle
+        // UI Engelinden ÖNCE kontrol ediyoruz ki zarları her durumda geçebilelim.
+        if (StateManager.Instance != null && StateManager.Instance.IsResolution())
+        {
+            if (Mouse.current.leftButton.wasPressedThisFrame)
+            {
+                Debug.Log("<color=green>[Input] Clearing Resolution via click.</color>");
+                if (UIManager.Instance != null) UIManager.Instance.OnCalculationClick();
+            }
+            return;
+        }
+
+        // 2. BUSY DURUMU: Animasyonlar varken tıklamayı tamamen blokla
+        if (StateManager.Instance != null && !StateManager.Instance.IsIdle())
+        {
+            return;
+        }
+
+        // 3. UI ENGELİ: Eğer mouse bir UI elemanı üzerindeyse (buton vs) dünya tıklamasını engelle
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
         {
+            if (Mouse.current.leftButton.wasPressedThisFrame)
+            {
+                PointerEventData eventData = new PointerEventData(EventSystem.current);
+                eventData.position = Mouse.current.position.ReadValue();
+                List<RaycastResult> results = new List<RaycastResult>();
+                EventSystem.current.RaycastAll(eventData, results);
+                if (results.Count > 0)
+                {
+                    Debug.Log($"<color=red>[Input] Blocked by UI: {results[0].gameObject.name}</color>");
+                }
+            }
             return;
         }
 
@@ -29,10 +67,20 @@ public class InputController : MonoBehaviour
         Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(new Vector3(mouseScreenPos.x, mouseScreenPos.y, 10f));
         mouseWorldPos.z = 0; 
         
-        Vector2Int currentGridPos = gridManager.GetGridPosition(mouseWorldPos);
+        Vector2Int currentGridPos = gridManager != null ? gridManager.GetGridPosition(mouseWorldPos) : Vector2Int.zero;
 
         if (Mouse.current.leftButton.wasPressedThisFrame)
         {
+            // Grid koordinatını her durumda logla
+            if (gridManager != null && gridManager.IsInBounds(currentGridPos))
+            {
+                Debug.Log($"<color=orange>[Input] Final Grid Click: {currentGridPos}</color>");
+            }
+            else if (gridManager != null)
+            {
+                Debug.Log($"<color=red>[Input] Click Out of Bounds: {currentGridPos}</color>");
+            }
+
             RaycastHit2D hit = Physics2D.Raycast(mouseWorldPos, Vector2.zero);
             
             // 1. ŞUT KONTROLÜ
@@ -51,11 +99,6 @@ public class InputController : MonoBehaviour
             PlayerUnit clickedPlayer = null;
             if (hit.collider != null) clickedPlayer = hit.collider.GetComponentInParent<PlayerUnit>();
             if (clickedPlayer == null && gridManager != null) clickedPlayer = gridManager.GetPlayerAt(currentGridPos);
-
-            if (gridManager != null && gridManager.IsInBounds(currentGridPos))
-            {
-                Debug.Log($"<color=white>Clicked on Grid: {currentGridPos}</color>");
-            }
 
             if (clickedPlayer != null)
             {
@@ -110,7 +153,11 @@ public class InputController : MonoBehaviour
         // YENİ SEÇİM
         if (TurnManager.Instance != null && TurnManager.Instance.activeTeam == clickedPlayer.team && !clickedPlayer.hasActed)
         {
+            if (selectedPlayer != null) selectedPlayer.SetSelected(false); // Önceki seçimi kaldır
+            
             selectedPlayer = clickedPlayer;
+            selectedPlayer.SetSelected(true); // Yeni oyuncuyu highlight et
+            
             currentMode = ActionMode.None;
             if (gridManager != null) gridManager.ClearHighlights();
             if (UIManager.Instance != null) UIManager.Instance.ShowActionPanel(selectedPlayer);
@@ -123,6 +170,7 @@ public class InputController : MonoBehaviour
         {
             if (selectedPlayer.IsInMovementRange(gridPos))
             {
+                selectedPlayer.SetSelected(false); // Hareket başladığında highlight kapat
                 StartCoroutine(selectedPlayer.MoveTo(gridPos));
                 selectedPlayer.hasActed = true; 
                 DeselectPlayer(); 
@@ -160,9 +208,13 @@ public class InputController : MonoBehaviour
 
     private void DeselectPlayer()
     {
-        if (selectedPlayer != null && selectedPlayer.hasActed)
+        if (selectedPlayer != null)
         {
-            if (TurnManager.Instance != null) TurnManager.Instance.CheckAutoEndTurn();
+            selectedPlayer.SetSelected(false); // Highlight'ı kapat
+            if (selectedPlayer.hasActed)
+            {
+                if (TurnManager.Instance != null) TurnManager.Instance.CheckAutoEndTurn();
+            }
         }
 
         selectedPlayer = null;

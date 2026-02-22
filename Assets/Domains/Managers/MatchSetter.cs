@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Collections;
+using NaughtyAttributes;
 
 public class MatchSetter : MonoBehaviour
 {
@@ -22,26 +24,54 @@ public class MatchSetter : MonoBehaviour
 
     private void SetupMatch()
     {
-        if (TurnManager.Instance == null)
+        if (TeamManager.Instance == null || TurnManager.Instance == null)
         {
-            Debug.LogError("TurnManager Instance is missing!");
+            Debug.LogError("Required Managers (TeamManager/TurnManager) are missing!");
             return;
         }
 
         List<PlayerUnit> bluePlayers = new List<PlayerUnit>();
         List<PlayerUnit> redPlayers = new List<PlayerUnit>();
 
-        // 1. Oyuncuları oluştur ve geçici listelere doldur
+        // 1. Takımları oluştur
         SpawnTeam(blueRoster, TeamColor.Blue, blueSpawnPos, bluePlayers);
         SpawnTeam(redRoster, TeamColor.Red, redSpawnPos, redPlayers);
 
-        // 2. TurnManager'a hazır listeleri teslim et (Kontrolü ona devret)
-        TurnManager.Instance.InitializeTeams(redPlayers, bluePlayers);
+        // 2. Takımları Kaydet (TeamManager)
+        TeamManager.Instance.RegisterTeams(redPlayers, bluePlayers);
 
-        // 3. Topu ata
-        AssignInitialBall(redPlayers, bluePlayers);
+        // 3. Hava Atışı (Jump Ball)
+        StartCoroutine(PlayJumpBallRoutine(redPlayers, bluePlayers));
 
-        Debug.Log("Match Setup Complete. Control handed over to TurnManager.");
+        Debug.Log("Match Setup initiated with Jump Ball!");
+    }
+
+    private IEnumerator PlayJumpBallRoutine(List<PlayerUnit> red, List<PlayerUnit> blue)
+    {
+        int blueRoll = Random.Range(1, 7);
+        int redRoll = Random.Range(1, 7);
+
+        while (blueRoll == redRoll)
+        {
+            blueRoll = Random.Range(1, 7);
+            redRoll = Random.Range(1, 7);
+        }
+
+        startingBallTeam = (blueRoll > redRoll) ? TeamColor.Blue : TeamColor.Red;
+        
+        if (UIManager.Instance != null)
+        {
+            yield return StartCoroutine(UIManager.Instance.AnimateDiceRoll(
+                redRoll, Color.red, blueRoll, Color.blue, "vs", null));
+            
+            string startMsg = (startingBallTeam == TeamColor.Blue) ? "BLUE TEAM STARTS!" : "RED TEAM STARTS!";
+            yield return StartCoroutine(UIManager.Instance.ShowAnnouncementRoutine(startMsg, 1.5f));
+        }
+
+        // 4. Maçı Başlat (TurnManager) - Bu otomatik olarak UI'ı da güncelleyecek
+        TurnManager.Instance.InitializeMatch(startingBallTeam);
+
+        AssignInitialBall(red, blue);
     }
 
     private void SpawnTeam(List<PlayerUnitData> roster, TeamColor team, List<Vector2Int> positions, List<PlayerUnit> listToFill)
